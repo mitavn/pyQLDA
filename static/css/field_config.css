@@ -1,0 +1,81 @@
+/* ===== Field Config Styles ===== */
+.field-tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    flex: 1;
+}
+.field-header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.field-tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.field-tab:hover { color: var(--primary); }
+.field-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.field-group { margin-bottom: 24px; }
+.field-group-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+.field-list { display: flex; flex-direction: column; gap: 4px; }
+.field-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: box-shadow 0.2s;
+}
+.field-card:hover { box-shadow: var(--shadow-hover); }
+.field-ghost { opacity: 0.4; background: var(--primary-light); }
+.field-drag-handle {
+    cursor: grab;
+    color: var(--text-secondary);
+    font-size: 14px;
+    padding: 4px;
+}
+.field-drag-handle:hover { color: var(--primary); }
+.field-info { flex: 1; }
+.field-label { font-size: 13px; font-weight: 500; color: var(--text-primary); display: block; }
+.field-meta { font-size: 11px; color: var(--text-secondary); }
+.field-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Toggle Switch */
+.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #d9d9d9;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 16px; width: 16px;
+    left: 2px; bottom: 2px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--primary); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }

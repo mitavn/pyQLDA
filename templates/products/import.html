@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Import sản phẩm từ Excel{% endblock %}
+{% block page_title %}Import sản phẩm{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Import từ Excel</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.import-container { max-width: 700px; margin: 0 auto; }
+.import-dropzone {
+    border: 2px dashed var(--border-input); border-radius: 12px; padding: 48px 24px;
+    text-align: center; transition: all 0.2s; cursor: pointer; background: #fafafa;
+}
+.import-dropzone:hover, .import-dropzone.dragover {
+    border-color: var(--primary); background: var(--primary-light);
+}
+.import-dropzone i { font-size: 48px; color: var(--primary); margin-bottom: 16px; }
+.import-dropzone h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.import-dropzone p { font-size: 13px; color: var(--text-secondary); }
+.import-dropzone .file-name { display: none; margin-top: 12px; font-weight: 600; color: var(--primary); font-size: 14px; }
+
+.import-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.import-step { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+.import-step-number { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+.import-step h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.import-step p { font-size: 12px; color: var(--text-secondary); }
+
+.col-preview { margin-top: 24px; }
+.col-preview table { width: 100%; font-size: 12px; }
+.col-preview th { background: var(--primary); color: #fff; padding: 8px 10px; font-size: 11px; font-weight: 600; }
+.col-preview td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-style: italic; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <!-- Steps -->
+    <div class="import-steps">
+        <div class="import-step">
+            <div class="import-step-number">1</div>
+            <h4>Tải mẫu</h4>
+            <p>Tải file Excel mẫu về điền dữ liệu</p>
+        </div>
+        <div class="import-step">
+            <div class="import-step-number">2</div>
+            <h4>Điền dữ liệu</h4>
+            <p>Điền thông tin sản phẩm theo cột</p>
+        </div>
+        <div class="import-step">
+            <div class="import-step-number">3</div>
+            <h4>Upload</h4>
+            <p>Tải file lên, hệ thống tự xử lý</p>
+        </div>
+    </div>
+
+    <!-- Download template -->
+    <div style="text-align:center;margin-bottom:24px">
+        <a href="{{ url_for('products.download_template') }}" class="btn btn-default" style="font-size:14px">
+            <i class="fas fa-download"></i> Tải file mẫu Excel
+        </a>
+    </div>
+
+    <!-- Upload form -->
+    <form method="POST" enctype="multipart/form-data" id="importForm">
+        <div class="import-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <h3>Kéo thả file Excel vào đây</h3>
+            <p>hoặc click để chọn file (.xlsx)</p>
+            <div class="file-name" id="fileName"></div>
+            <input type="file" name="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+        </div>
+
+        <div style="text-align:center;margin-top:20px">
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled style="padding:10px 32px;font-size:15px">
+                <i class="fas fa-upload"></i> Import sản phẩm
+            </button>
+        </div>
+    </form>
+
+    <!-- Column preview -->
+    <div class="col-preview">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-info-circle" style="color:var(--primary);margin-right:8px"></i>Cấu trúc file</h3></div>
+            <div class="card-body" style="padding:0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>A: Tên SP *</th>
+                            <th>B: SKU</th>
+                            <th>C: Danh mục</th>
+                            <th>D: Đơn vị</th>
+                            <th>E: Giá bán</th>
+                            <th>F: Giá vốn</th>
+                            <th>G: Tồn kho</th>
+                            <th>H: Tồn min</th>
+                            <th>I: Mô tả</th>
+                            <th>J: Barcode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CRM Pro</td>
+                            <td>SP-001</td>
+                            <td>Phần mềm</td>
+                            <td>License</td>
+                            <td>50,000,000</td>
+                            <td>30,000,000</td>
+                            <td>100</td>
+                            <td>10</td>
+                            <td>Phần mềm CRM</td>
+                            <td>890123...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);line-height:1.8">
+            <i class="fas fa-lightbulb" style="color:#faad14;margin-right:4px"></i>
+            <strong>Lưu ý:</strong> Nếu SKU trùng với sản phẩm đã có → hệ thống sẽ <strong>cập nhật</strong> thay vì tạo mới.
+        </div>
+    </div>
+</div>
+
+<script>
+var dropzone = document.getElementById('dropzone');
+var fileInput = document.getElementById('fileInput');
+var fileName = document.getElementById('fileName');
+var submitBtn = document.getElementById('submitBtn');
+
+fileInput.addEventListener('change', function() {
+    if (this.files[0]) {
+        fileName.textContent = '📄 ' + this.files[0].name;
+        fileName.style.display = 'block';
+        submitBtn.disabled = false;
+    }
+});
+
+dropzone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+dropzone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        fileName.textContent = '📄 ' + e.dataTransfer.files[0].name;
+        fileName.style.display = 'block';
+        submitBtn.disabled = false;
+    }
+});
+</script>
+{% endblock %}

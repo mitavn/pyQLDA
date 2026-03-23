@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Pipeline{% endblock %}
+{% block page_title %}Pipeline{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/pipeline.css') }}">{% endblock %}
+
+{% block content %}
+<div class="pipeline-header">
+    <a href="{{ url_for('deals.list_deals') }}" class="btn btn-default btn-sm"><i class="fas fa-list"></i> Danh sách</a>
+    <a href="{{ url_for('deals.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tạo Deal</a>
+</div>
+
+<div class="pipeline-board">
+    {% for stage in stages %}
+    <div class="pipeline-column" data-stage="{{ stage }}">
+        <div class="pipeline-column-header">
+            <h3>{{ stage }}</h3>
+            <span class="pipeline-count">{{ stages_data[stage].count }} deals · {{ stages_data[stage].total|format_currency }}</span>
+        </div>
+        <div class="pipeline-cards" data-stage="{{ stage }}">
+            {% for deal in stages_data[stage].deals %}
+            <div class="pipeline-card" data-deal-id="{{ deal.id }}" draggable="true">
+                <div class="pipeline-card-title">
+                    <a href="{{ url_for('deals.detail', id=deal.id) }}">{{ deal.name }}</a>
+                </div>
+                <div class="pipeline-card-value">{{ deal.value|format_currency }} VND</div>
+                {% if deal.contact %}
+                <div class="pipeline-card-contact"><i class="fas fa-user"></i> {{ deal.contact.full_name }}</div>
+                {% endif %}
+                {% if deal.expected_close_date %}
+                <div class="pipeline-card-date"><i class="fas fa-calendar"></i> {{ deal.expected_close_date|format_date }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let draggedCard = null;
+
+    document.querySelectorAll('.pipeline-card').forEach(card => {
+        card.addEventListener('dragstart', function(e) {
+            draggedCard = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+            draggedCard = null;
+        });
+    });
+
+    document.querySelectorAll('.pipeline-cards').forEach(col => {
+        col.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        col.addEventListener('dragleave', function() {
+            this.classList.remove('drag-over');
+        });
+        col.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            if (draggedCard) {
+                this.appendChild(draggedCard);
+                const dealId = draggedCard.dataset.dealId;
+                const newStage = this.dataset.stage;
+                fetch(`/deals/${dealId}/move`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({stage: newStage})
+                }).then(r => r.json()).then(data => {
+                    if (data.success) location.reload();
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

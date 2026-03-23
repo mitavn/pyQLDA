@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Công ty{% endblock %}
+{% block page_title %}Công ty{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <form class="search-form" method="GET">
+            <div class="input-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" value="{{ search }}" placeholder="Tìm kiếm công ty..." class="form-control">
+            </div>
+            <button type="submit" class="btn btn-default btn-sm">Lọc</button>
+        </form>
+    </div>
+    <div class="page-header-right">
+        <a href="{{ url_for('api.export_csv', module='companies') }}" class="btn btn-default btn-sm"><i class="fas fa-download"></i> Xuất CSV</a>
+        <a href="{{ url_for('companies.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo công ty</a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body" style="padding:0">
+        <table class="table table-hover">
+            <thead><tr><th>Tên công ty</th><th>Mã số thuế</th><th>Ngành nghề</th><th>Điện thoại</th><th>Quy mô</th><th>Ngày tạo</th><th style="width:80px"></th></tr></thead>
+            <tbody>
+                {% for company in companies.items %}
+                <tr>
+                    <td><a href="{{ url_for('companies.detail', id=company.id) }}" class="text-link">{{ company.name }}</a></td>
+                    <td>{{ company.tax_code or '-' }}</td>
+                    <td>{{ company.industry or '-' }}</td>
+                    <td>{{ company.phone or '-' }}</td>
+                    <td>{{ company.staff_size or '-' }}</td>
+                    <td>{{ company.created_at|format_date }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ url_for('companies.edit', id=company.id) }}" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                            <form method="POST" action="{{ url_for('companies.delete', id=company.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận xóa?')">
+                                <button type="submit" class="btn-icon text-danger" title="Xóa"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-muted" style="padding:40px">Chưa có công ty nào</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if companies.pages > 1 %}
+<div class="pagination">
+    {% if companies.has_prev %}<a href="?page={{ companies.prev_num }}&search={{ search }}" class="btn btn-default btn-sm">← Trước</a>{% endif %}
+    <span class="pagination-info">Trang {{ companies.page }} / {{ companies.pages }}</span>
+    {% if companies.has_next %}<a href="?page={{ companies.next_num }}&search={{ search }}" class="btn btn-default btn-sm">Sau →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

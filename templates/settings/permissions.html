@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Phân quyền{% endblock %}
+{% block page_title %}Phân quyền{% endblock %}
+
+{% block extra_css %}
+<style>
+.perm-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; }
+.perm-tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; color: #8c8c8c;
+    cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.2s;
+}
+.perm-tab:hover { color: var(--primary); }
+.perm-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.role-panel { display: none; }
+.role-panel.active { display: block; }
+
+.perm-matrix { width: 100%; border-collapse: collapse; }
+.perm-matrix th {
+    text-align: center; padding: 10px 12px; font-size: 12px; font-weight: 600;
+    color: #8c8c8c; text-transform: uppercase; letter-spacing: 0.5px;
+    background: #fafafa; border-bottom: 1px solid #f0f0f0;
+}
+.perm-matrix th:first-child { text-align: left; }
+.perm-matrix td {
+    padding: 12px; border-bottom: 1px solid #f0f0f0; text-align: center;
+    font-size: 13px;
+}
+.perm-matrix td:first-child { text-align: left; font-weight: 500; }
+.perm-matrix .module-row td { background: #fafafa; font-weight: 600; color: var(--primary); }
+.perm-matrix .scope-cell select {
+    padding: 4px 8px; border: 1px solid #d9d9d9; border-radius: 6px;
+    font-size: 12px; background: #fff; cursor: pointer;
+}
+.perm-checkbox {
+    width: 18px; height: 18px; cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.role-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.role-info { display: flex; align-items: center; gap: 12px; }
+.role-badge-lg {
+    padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;
+}
+.role-sys { background: #f0f2f5; color: #595959; }
+.role-custom { background: #e8eeff; color: var(--primary); }
+
+.add-role-bar { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; }
+.add-role-bar .form-group { margin-bottom: 0; flex: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Add new role -->
+<div class="card" style="margin-bottom:16px">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('settings.create_role_route') }}" class="add-role-bar">
+            <div class="form-group">
+                <label>Tên vai trò mới</label>
+                <input type="text" name="name" class="form-control" placeholder="VD: Sale Manager" required>
+            </div>
+            <div class="form-group">
+                <label>Mô tả</label>
+                <input type="text" name="description" class="form-control" placeholder="Mô tả vai trò">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo vai trò</button>
+        </form>
+    </div>
+</div>
+
+<!-- Role Tabs -->
+<div class="perm-tabs">
+    {% for role in roles %}
+    <div class="perm-tab {% if loop.first %}active{% endif %}" onclick="switchRole(this, 'role-{{ role.id }}')">
+        {{ role.name }}
+        {% if role.is_system %}<i class="fas fa-lock" style="font-size:10px;margin-left:4px;color:#bfbfbf" title="Hệ thống"></i>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Role Panels -->
+{% for role in roles %}
+<div class="role-panel {% if loop.first %}active{% endif %}" id="role-{{ role.id }}">
+    <div class="card">
+        <div class="card-body">
+            <div class="role-header">
+                <div class="role-info">
+                    <span class="role-badge-lg {% if role.is_system %}role-sys{% else %}role-custom{% endif %}">{{ role.name }}</span>
+                    {% if role.description %}<span style="font-size:13px;color:#8c8c8c">{{ role.description }}</span>{% endif %}
+                </div>
+                {% if not role.is_system %}
+                <form method="POST" action="{{ url_for('settings.delete_role_route', role_id=role.id) }}" onsubmit="return confirm('Xóa vai trò này?')">
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Xóa</button>
+                </form>
+                {% endif %}
+            </div>
+
+            <form method="POST" action="{{ url_for('settings.update_permissions_route', role_id=role.id) }}">
+                <table class="perm-matrix">
+                    <thead>
+                        <tr>
+                            <th style="width:180px">Module</th>
+                            {% for act in actions %}
+                            <th>{{ action_labels[act] }}</th>
+                            {% endfor %}
+                            <th style="width:140px">Phạm vi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mod in modules %}
+                        {% set ns = namespace(perm=None, scope='own') %}
+                        {% for p in role.permissions %}{% if p.module == mod %}{% set ns.perm = p %}{% set ns.scope = p.scope %}{% endif %}{% endfor %}
+                        <tr>
+                            <td><i class="fas fa-{% if mod == 'contact' %}users{% elif mod == 'company' %}building{% elif mod == 'deal' %}handshake{% else %}tasks{% endif %}" style="margin-right:8px;color:var(--primary)"></i>{{ module_labels[mod] }}</td>
+                            {% for act in actions %}
+                            <td>
+                                <input type="checkbox" name="{{ mod }}_{{ act }}" class="perm-checkbox"
+                                    {% if ns.perm and ns.perm['can_' ~ act] %}checked{% endif %}
+                                >
+                            </td>
+                            {% endfor %}
+                            <td class="scope-cell">
+                                <select name="{{ mod }}_scope">
+                                    {% for s_key, s_label in scope_labels.items() %}
+                                    <option value="{{ s_key }}"
+                                        {% if ns.scope == s_key %}selected{% endif %}
+                                    >{{ s_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu phân quyền</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchRole(tab, panelId) {
+    document.querySelectorAll('.perm-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.role-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+}
+</script>
+{% endblock %}

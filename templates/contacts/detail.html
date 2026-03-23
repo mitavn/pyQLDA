@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.full_name }}{% endblock %}
+{% block page_title %}Chi tiết liên hệ{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <div class="detail-avatar">
+        {{ (contact.first_name or 'K')[0]|upper }}
+    </div>
+    <div class="detail-title">
+        <h2>{{ contact.full_name }}</h2>
+        <div class="detail-meta">
+            {% if contact.customer_code %}<span class="badge badge-blue">{{ contact.customer_code }}</span>{% endif %}
+            {% if contact.category %}<span class="badge {% if contact.category == 'VIP' %}badge-orange{% else %}badge-default{% endif %}">{{ contact.category }}</span>{% endif %}
+            {% if contact.position %}· {{ contact.position }}{% endif %}
+            {% if contact.company %}· <a href="{{ url_for('companies.detail', id=contact.company.id) }}">{{ contact.company.name }}</a>{% endif %}
+        </div>
+    </div>
+    <div class="detail-actions">
+        <a href="{{ url_for('contacts.edit', id=contact.id) }}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> Sửa</a>
+        <form method="POST" action="{{ url_for('contacts.delete', id=contact.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận xóa?')">
+            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Xóa</button>
+        </form>
+    </div>
+</div>
+
+<div class="detail-layout">
+    <div class="detail-main">
+        <!-- Info Sections -->
+        {% set grouped = {} %}
+        {% for fc in field_configs %}
+            {% if fc.field_name not in ('company_id',) %}
+                {% set group = fc.group_name or 'Khác' %}
+                {% if group not in grouped %}{% set _ = grouped.update({group: []}) %}{% endif %}
+                {% set _ = grouped[group].append(fc) %}
+            {% endif %}
+        {% endfor %}
+
+        {% for group_name, fields in grouped.items() %}
+        <div class="detail-section">
+            <h3 class="section-title">{{ group_name }}</h3>
+            <div class="info-grid">
+                {% for fc in fields %}
+                {% set val = contact[fc.field_name] if contact[fc.field_name] is defined else '' %}
+                {% if val %}
+                <div class="info-item">
+                    <span class="info-label">{{ fc.label }}</span>
+                    <span class="info-value">
+                        {% if fc.field_type == 'date' %}{{ val|format_date }}
+                        {% elif fc.field_type == 'email' %}<a href="mailto:{{ val }}">{{ val }}</a>
+                        {% elif fc.field_type == 'phone' %}<a href="tel:{{ val }}">{{ val }}</a>
+                        {% else %}{{ val }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Notes Section -->
+        <div class="detail-section">
+            <h3 class="section-title">Ghi chú</h3>
+            <div class="notes-section" id="notesSection" data-module="contact" data-record-id="{{ contact.id }}">
+                <div class="note-form">
+                    <textarea id="noteContent" class="form-control" rows="2" placeholder="Thêm ghi chú..."></textarea>
+                    <button class="btn btn-primary btn-sm" onclick="addNote()">
+                        <i class="fas fa-plus"></i> Thêm
+                    </button>
+                </div>
+                <div id="notesList">
+                    {% for note in notes %}
+                    <div class="note-item" id="note-{{ note.id }}">
+                        <div class="note-header">
+                            <strong>{{ note.user.full_name or note.user.username }}</strong>
+                            <span class="note-date">{{ note.created_at|format_datetime }}</span>
+                            <button class="btn-icon text-danger" onclick="deleteNote({{ note.id }})"><i class="fas fa-times"></i></button>
+                        </div>
+                        <p>{{ note.content }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-sidebar">
+        <!-- Quick Info -->
+        <div class="sidebar-card">
+            <h4>Thông tin nhanh</h4>
+            <div class="quick-info">
+                {% if contact.email %}<div class="qi-item"><i class="fas fa-envelope"></i> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></div>{% endif %}
+                {% if contact.phone %}<div class="qi-item"><i class="fas fa-phone"></i> <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></div>{% endif %}
+                {% if contact.mobile %}<div class="qi-item"><i class="fas fa-mobile-alt"></i> {{ contact.mobile }}</div>{% endif %}
+                {% if contact.address %}<div class="qi-item"><i class="fas fa-map-marker-alt"></i> {{ contact.address }}{% if contact.city %}, {{ contact.city }}{% endif %}</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- Related Deals -->
+        <div class="sidebar-card">
+            <h4>Deals liên quan</h4>
+            {% if contact.deals %}
+            {% for deal in contact.deals[:5] %}
+            <div class="related-item">
+                <a href="{{ url_for('deals.detail', id=deal.id) }}">{{ deal.name }}</a>
+                <span class="stage-badge">{{ deal.stage }}</span>
+                <span class="text-muted">{{ deal.value|format_currency }}</span>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-muted">Chưa có deal</p>
+            {% endif %}
+        </div>
+
+        <!-- Activity Timeline -->
+        <div class="sidebar-card">
+            <h4>Hoạt động</h4>
+            {% if activities %}
+            <div class="mini-timeline">
+                {% for act in activities[:5] %}
+                <div class="mini-timeline-item">
+                    <span class="mini-icon">{{ act.type_icon }}</span>
+                    <div>
+                        <strong>{{ act.title }}</strong>
+                        <span class="text-muted">{{ act.created_at|format_datetime }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Chưa có hoạt động</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addNote() {
+    const section = document.getElementById('notesSection');
+    const content = document.getElementById('noteContent').value.trim();
+    if (!content) return;
+
+    fetch('/api/notes', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            module: section.dataset.module,
+            record_id: parseInt(section.dataset.recordId),
+            content: content
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const list = document.getElementById('notesList');
+            const div = document.createElement('div');
+            div.className = 'note-item';
+            div.id = 'note-' + data.note.id;
+            div.innerHTML = `
+                <div class="note-header">
+                    <strong>${data.note.user}</strong>
+                    <span class="note-date">${data.note.created_at}</span>
+                    <button class="btn-icon text-danger" onclick="deleteNote(${data.note.id})"><i class="fas fa-times"></i></button>
+                </div>
+                <p>${data.note.content}</p>
+            `;
+            list.insertBefore(div, list.firstChild);
+            document.getElementById('noteContent').value = '';
+        }
+    });
+}
+
+function deleteNote(noteId) {
+    if (!confirm('Xóa ghi chú này?')) return;
+    fetch('/api/notes/' + noteId, {method: 'DELETE'})
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('note-' + noteId).remove();
+        }
+    });
+}
+</script>
+{% endblock %}

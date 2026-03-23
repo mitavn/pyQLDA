@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Liên hệ{% endblock %}
+{% block page_title %}Liên hệ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <form class="search-form" method="GET">
+            <div class="input-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" value="{{ search }}" placeholder="Tìm kiếm liên hệ..." class="form-control">
+            </div>
+            <select name="category" class="form-control form-control-sm">
+                <option value="">Tất cả phân loại</option>
+                {% for c in ['VIP', 'Thường', 'Tiềm năng'] %}
+                <option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-default btn-sm">Lọc</button>
+        </form>
+    </div>
+    <div class="page-header-right">
+        <a href="{{ url_for('api.export_csv', module='contacts') }}" class="btn btn-default btn-sm">
+            <i class="fas fa-download"></i> Xuất CSV
+        </a>
+        <a href="{{ url_for('contacts.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Tạo liên hệ
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body" style="padding:0">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Mã KH</th>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                    <th>Điện thoại</th>
+                    <th>Công ty</th>
+                    <th>Phân loại</th>
+                    <th>Ngày tạo</th>
+                    <th style="width:80px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts.items %}
+                <tr>
+                    <td>{{ contact.customer_code or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('contacts.detail', id=contact.id) }}" class="text-link">
+                            {{ contact.full_name }}
+                        </a>
+                    </td>
+                    <td>{{ contact.email or '-' }}</td>
+                    <td>{{ contact.phone or '-' }}</td>
+                    <td>{{ contact.company.name if contact.company else '-' }}</td>
+                    <td>
+                        {% if contact.category %}
+                        <span class="badge {% if contact.category == 'VIP' %}badge-orange{% elif contact.category == 'Tiềm năng' %}badge-green{% else %}badge-default{% endif %}">
+                            {{ contact.category }}
+                        </span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{{ contact.created_at|format_date }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ url_for('contacts.edit', id=contact.id) }}" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                            <form method="POST" action="{{ url_for('contacts.delete', id=contact.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận xóa?')">
+                                <button type="submit" class="btn-icon text-danger" title="Xóa"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-muted" style="padding:40px">Chưa có liên hệ nào</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if contacts.pages > 1 %}
+<div class="pagination">
+    {% if contacts.has_prev %}
+    <a href="?page={{ contacts.prev_num }}&search={{ search }}&category={{ category }}" class="btn btn-default btn-sm">← Trước</a>
+    {% endif %}
+    <span class="pagination-info">Trang {{ contacts.page }} / {{ contacts.pages }} ({{ contacts.total }} kết quả)</span>
+    {% if contacts.has_next %}
+    <a href="?page={{ contacts.next_num }}&search={{ search }}&category={{ category }}" class="btn btn-default btn-sm">Sau →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

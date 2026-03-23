@@ -1,0 +1,77 @@
+{% macro render_field(fc, record, companies, contacts, deals) %}
+<div class="form-group">
+    <label for="{{ fc.field_name }}">
+        {{ fc.label }}
+        {% if fc.is_required %}<span class="required">*</span>{% endif %}
+    </label>
+
+    {% set value = record[fc.field_name] if record and record[fc.field_name] is defined else '' %}
+
+    {% if fc.field_name == 'company_id' %}
+        <select name="company_id" id="company_id" class="form-control">
+            <option value="">-- Chọn công ty --</option>
+            {% for c in (companies or []) %}
+            <option value="{{ c.id }}" {% if record and record.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+
+    {% elif fc.field_name == 'contact_id' %}
+        <select name="contact_id" id="contact_id" class="form-control">
+            <option value="">-- Chọn liên hệ --</option>
+            {% for c in (contacts or []) %}
+            <option value="{{ c.id }}" {% if record and record.contact_id == c.id %}selected{% endif %}>{{ c.full_name }}</option>
+            {% endfor %}
+        </select>
+
+    {% elif fc.field_name == 'deal_id' %}
+        <select name="deal_id" id="deal_id" class="form-control">
+            <option value="">-- Chọn deal --</option>
+            {% for d in (deals or []) %}
+            <option value="{{ d.id }}" {% if record and record.deal_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+        </select>
+
+    {% elif fc.field_type == 'select' %}
+        <select name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+                {% if fc.is_required %}required{% endif %}>
+            <option value="">-- Chọn --</option>
+            {% for opt in fc.get_options() %}
+            <option value="{{ opt }}" {% if value == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+        </select>
+
+    {% elif fc.field_type == 'textarea' %}
+        <textarea name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+                  rows="3" {% if fc.is_required %}required{% endif %}
+                  placeholder="{{ fc.placeholder or '' }}">{{ value }}</textarea>
+
+    {% elif fc.field_type == 'date' %}
+        <input type="date" name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+               value="{{ value.strftime('%Y-%m-%d') if value else '' }}"
+               {% if fc.is_required %}required{% endif %}>
+
+    {% elif fc.field_type == 'datetime' %}
+        <input type="datetime-local" name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+               value="{{ value.strftime('%Y-%m-%dT%H:%M') if value else '' }}"
+               {% if fc.is_required %}required{% endif %}>
+
+    {% elif fc.field_type == 'number' %}
+        <input type="number" name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+               value="{{ value if value else '' }}" step="any"
+               {% if fc.is_required %}required{% endif %}
+               placeholder="{{ fc.placeholder or '' }}">
+
+    {% elif fc.field_type == 'email' %}
+        <input type="email" name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+               value="{{ value }}"
+               {% if fc.is_required %}required{% endif %}
+               placeholder="{{ fc.placeholder or '' }}">
+
+    {% else %}
+        <input type="text" name="{{ fc.field_name }}" id="{{ fc.field_name }}" class="form-control"
+               value="{{ value }}"
+               {% if fc.is_required %}required{% endif %}
+               placeholder="{{ fc.placeholder or '' }}">
+    {% endif %}
+</div>
+{% endmacro %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}{{ order.order_number }} — {{ order.type_label }}{% endblock %}
+{% block page_title %}{{ order.order_number }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_orders') }}">Phiếu nhập xuất</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{{ order.order_number }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.od-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.od-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; color: #fff; }
+.od-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.od-meta-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.od-meta-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+.od-meta-value { font-size: 15px; font-weight: 600; }
+.od-items th { padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+.od-items td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.od-status-flow { display: flex; gap: 0; margin-bottom: 16px; }
+.od-flow-step { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; color: #8c8c8c; background: #f5f5f5; border: 1px solid var(--border); position: relative; }
+.od-flow-step:first-child { border-radius: 8px 0 0 8px; }
+.od-flow-step:last-child { border-radius: 0 8px 8px 0; }
+.od-flow-step.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.od-flow-step.done { background: #52c41a; color: #fff; border-color: #52c41a; }
+.od-flow-step.cancelled { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="od-header">
+    <div style="display:flex;align-items:center;gap:12px">
+        <span class="od-badge" style="background:{{ order.type_color }}">
+            <i class="fas {{ order.type_icon }}"></i> {{ order.type_label }}
+        </span>
+        <span class="od-badge" style="background:{{ order.status_color }}">{{ order.status_label }}</span>
+    </div>
+    <div style="display:flex;gap:8px">
+        {% if order.status == 'draft' %}
+        <a href="{{ url_for('products.edit_order', id=order.id) }}" class="btn btn-default"><i class="fas fa-edit"></i> Sửa</a>
+        <form method="POST" action="{{ url_for('products.complete_order', id=order.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận hoàn thành phiếu? Tồn kho sẽ được cập nhật.')">
+            <button class="btn btn-primary"><i class="fas fa-check-circle"></i> Hoàn thành & Cập nhật kho</button>
+        </form>
+        <form method="POST" action="{{ url_for('products.cancel_order', id=order.id) }}" style="display:inline" onsubmit="return confirm('Hủy phiếu này?')">
+            <button class="btn btn-danger btn-sm"><i class="fas fa-ban"></i> Hủy phiếu</button>
+        </form>
+        {% elif order.status == 'confirmed' %}
+        <form method="POST" action="{{ url_for('products.complete_order', id=order.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận hoàn thành?')">
+            <button class="btn btn-primary"><i class="fas fa-check-circle"></i> Hoàn thành</button>
+        </form>
+        {% endif %}
+        {% if order.status != 'completed' %}
+        <form method="POST" action="{{ url_for('products.delete_order', id=order.id) }}" style="display:inline" onsubmit="return confirm('Xóa phiếu?')">
+            <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Status flow -->
+<div class="od-status-flow">
+    <div class="od-flow-step {% if order.status == 'draft' %}active{% elif order.status in ('confirmed','completed') %}done{% elif order.status == 'cancelled' %}cancelled{% endif %}">
+        <i class="fas fa-file"></i> Nháp
+    </div>
+    <div class="od-flow-step {% if order.status == 'confirmed' %}active{% elif order.status == 'completed' %}done{% elif order.status == 'cancelled' %}cancelled{% endif %}">
+        <i class="fas fa-check"></i> Xác nhận
+    </div>
+    <div class="od-flow-step {% if order.status == 'completed' %}done{% elif order.status == 'cancelled' %}cancelled{% endif %}">
+        <i class="fas fa-check-double"></i> Hoàn thành
+    </div>
+</div>
+
+<!-- Meta -->
+<div class="od-meta">
+    <div class="od-meta-card">
+        <div class="od-meta-label">Mã phiếu</div>
+        <div class="od-meta-value" style="font-family:monospace">{{ order.order_number }}</div>
+    </div>
+    <div class="od-meta-card">
+        <div class="od-meta-label">Đối tác</div>
+        <div class="od-meta-value">{{ order.partner or '-' }}</div>
+        {% if order.partner_contact %}<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">{{ order.partner_contact }}</div>{% endif %}
+    </div>
+    <div class="od-meta-card">
+        <div class="od-meta-label">Ngày dự kiến</div>
+        <div class="od-meta-value">{{ order.expected_date.strftime('%d/%m/%Y') if order.expected_date else '-' }}</div>
+    </div>
+    <div class="od-meta-card">
+        <div class="od-meta-label">Ngày tạo</div>
+        <div class="od-meta-value">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">{{ order.creator.full_name if order.creator else '-' }}</div>
+    </div>
+</div>
+
+<!-- Items -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-cube" style="color:var(--primary);margin-right:8px"></i>Chi tiết sản phẩm</h3></div>
+    <table class="table od-items">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Sản phẩm</th>
+                <th class="text-right">Đơn giá</th>
+                <th class="text-right">Số lượng</th>
+                <th class="text-right">Thành tiền</th>
+                <th>Ghi chú</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items %}
+            <tr>
+                <td style="color:var(--text-secondary)">{{ loop.index }}</td>
+                <td>
+                    <strong>{{ item.product.name }}</strong>
+                    <div style="font-size:11px;color:var(--text-secondary)">{{ item.product.sku or '' }} · {{ item.product.unit }}</div>
+                </td>
+                <td class="text-right">{{ item.unit_cost|format_currency }}</td>
+                <td class="text-right" style="font-weight:600">{{ item.quantity|int }}</td>
+                <td class="text-right" style="font-weight:600">{{ item.total|format_currency }}</td>
+                <td style="font-size:12px;color:var(--text-secondary)">{{ item.note or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted">Không có sản phẩm</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"></td>
+                <td class="text-right" style="font-weight:700;border-top:2px solid var(--text-primary)">Tổng: {{ order.total_quantity|int }}</td>
+                <td class="text-right" style="font-weight:700;font-size:16px;color:var(--primary);border-top:2px solid var(--text-primary)">{{ order.total_value|format_currency }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+{% if order.note %}
+<div style="margin-top:12px;padding:16px 20px;background:#fafafa;border:1px solid var(--border);border-radius:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px"><i class="fas fa-sticky-note"></i> Ghi chú</div>
+    <div style="font-size:13px;white-space:pre-wrap">{{ order.note }}</div>
+</div>
+{% endif %}
+{% endblock %}

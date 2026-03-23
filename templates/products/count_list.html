@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Kiểm kho{% endblock %}
+{% block page_title %}Kiểm kho hàng loạt{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Kiểm kho</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div></div>
+    <a href="{{ url_for('products.create_count') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo phiếu kiểm kho</a>
+</div>
+
+<div class="card">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>MÃ PHIẾU</th>
+                <th>TRẠNG THÁI</th>
+                <th>SỐ SẢN PHẨM</th>
+                <th>CHÊNH LỆCH</th>
+                <th>NGÀY TẠO</th>
+                <th>NGƯỜI TẠO</th>
+                <th>NGÀY HOÀN THÀNH</th>
+                <th>GHI CHÚ</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in counts.items %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('products.count_detail', id=c.id) }}" class="text-link" style="font-weight:600;font-family:monospace">{{ c.count_number }}</a>
+                </td>
+                <td>
+                    <span style="display:inline-flex;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background:{{ c.status_color }}">{{ c.status_label }}</span>
+                </td>
+                <td style="font-weight:600">{{ c.total_products }}</td>
+                <td>
+                    {% if c.total_difference > 0 %}<span style="color:#52c41a;font-weight:600">+{{ c.total_difference|int }}</span>
+                    {% elif c.total_difference < 0 %}<span style="color:#ff4d4f;font-weight:600">{{ c.total_difference|int }}</span>
+                    {% else %}<span style="color:var(--text-secondary)">0</span>{% endif %}
+                </td>
+                <td style="font-size:12px">{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td style="font-size:12px">{{ c.creator.full_name if c.creator else '-' }}</td>
+                <td style="font-size:12px">{{ c.completed_at.strftime('%d/%m/%Y %H:%M') if c.completed_at else '-' }}</td>
+                <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.note or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('products.count_detail', id=c.id) }}" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="text-center text-muted" style="padding:40px">Chưa có phiếu kiểm kho</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if counts.pages > 1 %}
+<div class="pagination">
+    {% if counts.has_prev %}<a href="?page={{ counts.prev_num }}" class="btn btn-default btn-sm">&laquo;</a>{% endif %}
+    <span class="pagination-info">{{ counts.page }}/{{ counts.pages }}</span>
+    {% if counts.has_next %}<a href="?page={{ counts.next_num }}" class="btn btn-default btn-sm">&raquo;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

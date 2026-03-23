@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Thống kê nhân viên{% endblock %}
+{% block page_title %}Thống kê hoạt động nhân viên{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Thống kê</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-ov-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+.stat-ov-card .val { font-size: 28px; font-weight: 700; }
+.stat-ov-card .lbl { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.period-selector { display: flex; gap: 6px; margin-bottom: 16px; }
+.period-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-decoration: none; }
+.period-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.rank-table { width: 100%; border-collapse: collapse; }
+.rank-table th { padding: 12px 16px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+.rank-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.rank-num { width: 40px; text-align: center; }
+.rank-1 { color: #faad14; font-weight: 700; font-size: 18px; }
+.rank-2 { color: #8c8c8c; font-weight: 700; font-size: 16px; }
+.rank-3 { color: #d48806; font-weight: 700; font-size: 15px; }
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; background: var(--primary); }
+.bar-container { width: 100%; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Period selector -->
+<div class="period-selector">
+    <a href="?days=1" class="period-btn {% if days == 1 %}active{% endif %}">Hôm nay</a>
+    <a href="?days=7" class="period-btn {% if days == 7 %}active{% endif %}">7 ngày</a>
+    <a href="?days=30" class="period-btn {% if days == 30 %}active{% endif %}">30 ngày</a>
+    <a href="?days=90" class="period-btn {% if days == 90 %}active{% endif %}">90 ngày</a>
+</div>
+
+<!-- Overview -->
+<div class="stat-overview">
+    <div class="stat-ov-card">
+        <div class="val" style="color:var(--primary)">{{ total_users }}</div>
+        <div class="lbl">Tổng nhân viên</div>
+    </div>
+    <div class="stat-ov-card">
+        <div class="val" style="color:#52c41a">{{ online_count }}</div>
+        <div class="lbl">Đang online</div>
+    </div>
+    <div class="stat-ov-card">
+        <div class="val" style="color:#1890ff">{{ total_activities }}</div>
+        <div class="lbl">Tổng hoạt động ({{ days }} ngày)</div>
+    </div>
+    <div class="stat-ov-card">
+        <div class="val" style="color:#722ed1">{{ (total_activities / [total_users, 1]|max)|round(1) }}</div>
+        <div class="lbl">TB/người</div>
+    </div>
+</div>
+
+<!-- Ranking table -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-trophy" style="color:#faad14;margin-right:8px"></i>Bảng xếp hạng hoạt động</h3></div>
+    <table class="rank-table">
+        <thead>
+            <tr>
+                <th class="rank-num">#</th>
+                <th>Nhân viên</th>
+                <th>Trạng thái</th>
+                <th class="text-center">Đăng nhập</th>
+                <th class="text-center">Tạo mới</th>
+                <th class="text-center">Cập nhật</th>
+                <th class="text-center">Giờ HĐ</th>
+                <th class="text-center">Tổng HĐ</th>
+                <th>Mức độ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set max_actions = user_stats[0].total_actions if user_stats else 1 %}
+            {% for s in user_stats %}
+            <tr>
+                <td class="rank-num {% if loop.index <= 3 %}rank-{{ loop.index }}{% endif %}">
+                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                </td>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar">{{ s.user.initials }}</div>
+                        <div>
+                            <div style="font-weight:600;font-size:13px">{{ s.user.full_name or s.user.username }}</div>
+                            <div style="font-size:11px;color:var(--text-secondary)">{{ s.user.position_obj.name if s.user.position_obj else '' }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="online-dot" style="background:{{ s.user.online_color }}"></span>
+                    <span style="font-size:12px;color:{{ s.user.online_color }}">{{ s.user.online_label }}</span>
+                </td>
+                <td class="text-center" style="font-weight:600">{{ s.logins }}</td>
+                <td class="text-center" style="font-weight:600;color:#52c41a">{{ s.creates }}</td>
+                <td class="text-center" style="font-weight:600;color:#faad14">{{ s.updates }}</td>
+                <td class="text-center" style="font-weight:600;color:#722ed1">{{ s.active_hours }}h</td>
+                <td class="text-center" style="font-weight:700;font-size:15px">{{ s.total_actions }}</td>
+                <td style="min-width:120px">
+                    <div class="bar-container">
+                        <div class="bar-fill" style="width:{{ (s.total_actions / [max_actions,1]|max * 100)|round }}%;background:{% if loop.index == 1 %}#52c41a{% elif s.total_actions > max_actions * 0.5 %}#1890ff{% elif s.total_actions > max_actions * 0.2 %}#faad14{% else %}#ff4d4f{% endif %}"></div>
+                    </div>
+                    <div style="font-size:10px;color:var(--text-secondary);margin-top:2px">{{ s.avg_daily }} HĐ/ngày</div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="text-center text-muted" style="padding:40px">Chưa có dữ liệu</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

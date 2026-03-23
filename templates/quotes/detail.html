@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}{{ quote.title }} - Báo giá{% endblock %}
+{% block page_title %}{{ quote.title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('quotes.list_quotes') }}">Báo giá</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{{ quote.title }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Header */
+.q-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.q-header h2 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.q-header-badge { font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 12px; color: #fff; }
+.q-actions { display: flex; gap: 8px; }
+
+/* Status pipeline */
+.status-pipeline { display: flex; gap: 0; margin-bottom: 20px; }
+.status-step {
+    padding: 8px 24px; font-size: 13px; font-weight: 600;
+    color: #fff; position: relative; cursor: pointer; transition: all 0.2s; border: none;
+}
+.status-step:first-child { border-radius: 20px 0 0 20px; }
+.status-step:last-child { border-radius: 0 20px 20px 0; }
+.status-step.draft { background: #8c8c8c; }
+.status-step.sent { background: #1890ff; }
+.status-step.accepted { background: #52c41a; }
+.status-step.rejected { background: #ff4d4f; }
+.status-step.inactive { opacity: 0.3; }
+.status-step.current { opacity: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+/* Parties: Từ / Đến */
+.q-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.q-party-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; position: relative;
+}
+.q-party-label {
+    position: absolute; top: -10px; left: 16px;
+    background: #fff; padding: 0 8px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-secondary);
+}
+.q-party-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-primary); }
+.q-party-detail { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.q-party-detail i { width: 16px; text-align: center; margin-right: 6px; color: #bfbfbf; font-size: 12px; }
+.q-party-avatar {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; margin-bottom: 12px;
+}
+
+/* Meta bar */
+.q-meta-bar {
+    display: flex; gap: 0; background: #fafafa; border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 16px; overflow: hidden;
+}
+.q-meta-item {
+    flex: 1; padding: 14px 20px; text-align: center;
+    border-right: 1px solid var(--border);
+}
+.q-meta-item:last-child { border-right: none; }
+.q-meta-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.q-meta-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+/* Items table */
+.items-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.items-table th {
+    text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700;
+    color: var(--text-secondary); border-bottom: 2px solid var(--border);
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.items-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.items-table .text-right { text-align: right; }
+.items-table tbody tr:hover { background: #fafafa; }
+
+/* Totals */
+.q-totals { display: flex; flex-direction: column; align-items: flex-end; margin-top: 16px; gap: 6px; }
+.q-total-row { display: flex; justify-content: space-between; width: 320px; font-size: 14px; padding: 5px 0; }
+.q-total-row.grand {
+    font-weight: 700; font-size: 17px; color: var(--primary);
+    border-top: 2px solid var(--text-primary); padding-top: 10px; margin-top: 4px;
+}
+
+/* Notes */
+.q-notes { margin-top: 20px; padding: 16px 20px; background: #fafafa; border-radius: 10px; border: 1px solid var(--border); }
+.q-notes h4 { font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.q-notes p { font-size: 13px; line-height: 1.7; white-space: pre-wrap; color: var(--text-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="q-header">
+    <h2>
+        {{ quote.title }}
+        <span class="q-header-badge" style="background:{{ quote.status_color }}">{{ quote.status_label }}</span>
+    </h2>
+    <div class="q-actions">
+        <a href="{{ url_for('quotes.edit', id=quote.id) }}" class="btn btn-primary"><i class="fas fa-edit"></i> Biên tập</a>
+        <form method="POST" action="{{ url_for('quotes.delete', id=quote.id) }}" style="display:inline" onsubmit="return confirm('Xóa báo giá này?')">
+            <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Xóa</button>
+        </form>
+    </div>
+</div>
+
+<!-- Status Pipeline -->
+<div class="status-pipeline">
+    {% set ns = namespace(found=false) %}
+    {% for key, label in [('draft','Nháp'), ('sent','Đã gửi'), ('accepted','Chấp nhận')] %}
+    <form method="POST" action="{{ url_for('quotes.update_status', id=quote.id) }}" style="display:inline">
+        <input type="hidden" name="status" value="{{ key }}">
+        <button type="submit" class="status-step {{ key }} {% if quote.status == key %}current{% elif ns.found %}inactive{% endif %}">
+            {{ label }}
+        </button>
+    </form>
+    {% if quote.status == key %}{% set ns.found = true %}{% endif %}
+    {% endfor %}
+</div>
+
+<!-- Parties: Từ / Đến -->
+<div class="q-parties">
+    <!-- TỪ — Người gửi báo giá -->
+    <div class="q-party-card">
+        <div class="q-party-label">Từ — Người gửi</div>
+        <div class="q-party-avatar" style="background:var(--primary-light);color:var(--primary)">
+            {{ (quote.preparer.full_name if quote.preparer else 'CRM')[0:2]|upper }}
+        </div>
+        <div class="q-party-name">
+            {{ quote.preparer.full_name if quote.preparer else current_user.full_name }}
+        </div>
+        <div class="q-party-detail">
+            {% if quote.preparer %}
+            <div><i class="fas fa-envelope"></i>{{ quote.preparer.email or '-' }}</div>
+            {% endif %}
+            <div><i class="fas fa-building"></i>{{ current_user.tenant.name }}</div>
+        </div>
+    </div>
+
+    <!-- ĐẾN — Khách hàng nhận -->
+    <div class="q-party-card">
+        <div class="q-party-label">Đến — Khách hàng</div>
+        {% if quote.company %}
+        <div class="q-party-avatar" style="background:#e6f7ff;color:#1890ff">
+            {{ quote.company.name[0:2]|upper }}
+        </div>
+        <div class="q-party-name">{{ quote.company.name }}</div>
+        <div class="q-party-detail">
+            {% if quote.company.industry %}<div><i class="fas fa-industry"></i>{{ quote.company.industry }}</div>{% endif %}
+            {% if quote.company.website %}<div><i class="fas fa-globe"></i>{{ quote.company.website }}</div>{% endif %}
+            {% if quote.company.phone %}<div><i class="fas fa-phone"></i>{{ quote.company.phone }}</div>{% endif %}
+            {% if quote.contact %}
+            <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">
+                <div><i class="fas fa-user"></i><strong>{{ quote.contact.first_name }} {{ quote.contact.last_name }}</strong></div>
+                {% if quote.contact.email %}<div><i class="fas fa-envelope"></i>{{ quote.contact.email }}</div>{% endif %}
+                {% if quote.contact.phone %}<div><i class="fas fa-phone"></i>{{ quote.contact.phone }}</div>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% elif quote.contact %}
+        <div class="q-party-avatar" style="background:#f6ffed;color:#52c41a">
+            {{ quote.contact.first_name[0]|upper }}{{ quote.contact.last_name[0]|upper if quote.contact.last_name else '' }}
+        </div>
+        <div class="q-party-name">{{ quote.contact.first_name }} {{ quote.contact.last_name }}</div>
+        <div class="q-party-detail">
+            {% if quote.contact.email %}<div><i class="fas fa-envelope"></i>{{ quote.contact.email }}</div>{% endif %}
+            {% if quote.contact.phone %}<div><i class="fas fa-phone"></i>{{ quote.contact.phone }}</div>{% endif %}
+        </div>
+        {% elif quote.prepared_for %}
+        <div class="q-party-avatar" style="background:#fff7e6;color:#faad14">
+            {{ quote.prepared_for[0:2]|upper }}
+        </div>
+        <div class="q-party-name">{{ quote.prepared_for }}</div>
+        {% else %}
+        <div class="q-party-detail" style="color:var(--text-secondary);font-style:italic">Chưa có thông tin khách hàng</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Meta bar -->
+<div class="q-meta-bar">
+    <div class="q-meta-item">
+        <div class="q-meta-label">Mã báo giá</div>
+        <div class="q-meta-value">{{ quote.quote_number or '-' }}</div>
+    </div>
+    <div class="q-meta-item">
+        <div class="q-meta-label">Ngày tạo</div>
+        <div class="q-meta-value">{{ quote.created_at|format_date }}</div>
+    </div>
+    <div class="q-meta-item">
+        <div class="q-meta-label">Hiệu lực đến</div>
+        <div class="q-meta-value">{{ quote.valid_until|format_date if quote.valid_until else '-' }}</div>
+    </div>
+    <div class="q-meta-item">
+        <div class="q-meta-label">Đơn vị tiền tệ</div>
+        <div class="q-meta-value">{{ quote.currency }}</div>
+    </div>
+    {% if quote.deal %}
+    <div class="q-meta-item">
+        <div class="q-meta-label">Deal liên quan</div>
+        <div class="q-meta-value">{{ quote.deal.name }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Items Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width:5%">#</th>
+                    <th style="width:40%">Sản phẩm / Dịch vụ</th>
+                    <th class="text-right">Đơn giá</th>
+                    <th class="text-right">SL</th>
+                    <th class="text-right">Giảm giá</th>
+                    <th class="text-right">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in quote.items %}
+                <tr>
+                    <td style="color:var(--text-secondary)">{{ loop.index }}</td>
+                    <td>
+                        <strong>{{ item.title }}</strong>
+                        {% if item.description %}<br><span style="font-size:12px;color:var(--text-secondary)">{{ item.description }}</span>{% endif %}
+                    </td>
+                    <td class="text-right">{{ item.unit_price|format_currency }}</td>
+                    <td class="text-right">{{ item.quantity|int }}</td>
+                    <td class="text-right">{% if item.discount %}{{ item.discount }}%{% else %}-{% endif %}</td>
+                    <td class="text-right"><strong>{{ item.total|format_currency }}</strong></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted" style="padding:30px">Chưa có sản phẩm</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="q-totals">
+            <div class="q-total-row">
+                <span>Tổng phụ</span>
+                <span>{{ quote.subtotal|format_currency }} {{ quote.currency }}</span>
+            </div>
+            {% if quote.discount_total %}
+            <div class="q-total-row" style="color:var(--danger)">
+                <span>Giảm giá</span>
+                <span>-{{ quote.discount_total|format_currency }} {{ quote.currency }}</span>
+            </div>
+            {% endif %}
+            <div class="q-total-row">
+                <span>Thuế ({{ quote.tax_rate }}%)</span>
+                <span>{{ quote.tax_amount|format_currency }} {{ quote.currency }}</span>
+            </div>
+            <div class="q-total-row grand">
+                <span>Tổng giá trị</span>
+                <span>{{ quote.grand_total|format_currency }} {{ quote.currency }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes & Terms -->
+{% if quote.notes or quote.terms %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+    {% if quote.notes %}
+    <div class="q-notes">
+        <h4><i class="fas fa-sticky-note" style="margin-right:6px"></i>Ghi chú</h4>
+        <p>{{ quote.notes }}</p>
+    </div>
+    {% endif %}
+    {% if quote.terms %}
+    <div class="q-notes">
+        <h4><i class="fas fa-file-contract" style="margin-right:6px"></i>Điều khoản</h4>
+        <p>{{ quote.terms }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

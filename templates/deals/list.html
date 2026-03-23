@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Deals{% endblock %}
+{% block page_title %}Deals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <form class="search-form" method="GET">
+            <div class="input-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" value="{{ search }}" placeholder="Tìm kiếm deal..." class="form-control">
+            </div>
+            <select name="stage" class="form-control form-control-sm">
+                <option value="">Tất cả giai đoạn</option>
+                {% for s in stages %}<option value="{{ s }}" {% if stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+            <select name="status" class="form-control form-control-sm">
+                <option value="">Tất cả trạng thái</option>
+                <option value="open" {% if status == 'open' %}selected{% endif %}>Mở</option>
+                <option value="won" {% if status == 'won' %}selected{% endif %}>Thắng</option>
+                <option value="lost" {% if status == 'lost' %}selected{% endif %}>Thua</option>
+            </select>
+            <button type="submit" class="btn btn-default btn-sm">Lọc</button>
+        </form>
+    </div>
+    <div class="page-header-right">
+        <a href="{{ url_for('deals.pipeline') }}" class="btn btn-default btn-sm"><i class="fas fa-columns"></i> Pipeline</a>
+        <a href="{{ url_for('api.export_csv', module='deals') }}" class="btn btn-default btn-sm"><i class="fas fa-download"></i> Xuất CSV</a>
+        <a href="{{ url_for('deals.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo deal</a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body" style="padding:0">
+        <table class="table table-hover">
+            <thead><tr><th>Tên deal</th><th>Giai đoạn</th><th>Trạng thái</th><th style="text-align:right">Giá trị</th><th>Liên hệ</th><th>Ngày đóng DK</th><th style="width:80px"></th></tr></thead>
+            <tbody>
+                {% for deal in deals.items %}
+                <tr>
+                    <td><a href="{{ url_for('deals.detail', id=deal.id) }}" class="text-link">{{ deal.name }}</a></td>
+                    <td><span class="stage-badge">{{ deal.stage }}</span></td>
+                    <td>
+                        <span class="badge {% if deal.status == 'won' %}badge-green{% elif deal.status == 'lost' %}badge-red{% else %}badge-blue{% endif %}">
+                            {% if deal.status == 'won' %}Thắng{% elif deal.status == 'lost' %}Thua{% else %}Mở{% endif %}
+                        </span>
+                    </td>
+                    <td style="text-align:right">{{ deal.value|format_currency }}</td>
+                    <td>{{ deal.contact.full_name if deal.contact else '-' }}</td>
+                    <td>{{ deal.expected_close_date|format_date if deal.expected_close_date else '-' }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ url_for('deals.edit', id=deal.id) }}" class="btn-icon"><i class="fas fa-edit"></i></a>
+                            <form method="POST" action="{{ url_for('deals.delete', id=deal.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận xóa?')">
+                                <button type="submit" class="btn-icon text-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-muted" style="padding:40px">Chưa có deal nào</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if deals.pages > 1 %}
+<div class="pagination">
+    {% if deals.has_prev %}<a href="?page={{ deals.prev_num }}&search={{ search }}&stage={{ stage }}&status={{ status }}" class="btn btn-default btn-sm">← Trước</a>{% endif %}
+    <span class="pagination-info">Trang {{ deals.page }} / {{ deals.pages }}</span>
+    {% if deals.has_next %}<a href="?page={{ deals.next_num }}&search={{ search }}&stage={{ stage }}&status={{ status }}" class="btn btn-default btn-sm">Sau →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

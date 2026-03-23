@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% block title %}Phòng ban & Chức vụ{% endblock %}
+{% block page_title %}Phòng ban & Chức vụ{% endblock %}
+
+{% block extra_css %}
+<style>
+.dept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.dept-card {
+    background: #fff; border: 1px solid #f0f0f0; border-radius: 8px;
+    padding: 16px; display: flex; align-items: flex-start; justify-content: space-between;
+    transition: box-shadow 0.2s;
+}
+.dept-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dept-main { flex: 1; }
+.dept-name { font-size: 15px; font-weight: 600; color: #262626; margin-bottom: 4px; }
+.dept-meta { font-size: 12px; color: #8c8c8c; display: flex; gap: 12px; flex-wrap: wrap; }
+.dept-meta i { margin-right: 4px; }
+.dept-actions { display: flex; gap: 4px; }
+.member-list { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.member-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 12px; font-size: 11px;
+    background: #f0f2f5; color: #595959;
+}
+.member-tag .avatar-sm {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 600;
+}
+
+/* Positions table */
+.pos-level { display: inline-flex; align-items: center; gap: 4px; }
+.level-dots { display: flex; gap: 2px; }
+.level-dot { width: 8px; height: 8px; border-radius: 50%; background: #d9d9d9; }
+.level-dot.active { background: var(--primary); }
+
+/* Modal */
+.modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45); z-index: 1000;
+    align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: #fff; border-radius: 12px; padding: 24px; width: 480px; max-width: 95%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;
+}
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* Users table */
+.users-table td .role-badge {
+    padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+}
+.role-admin { background: #fff1f0; color: #cf1322; }
+.role-manager { background: #e6f7ff; color: #096dd9; }
+.role-user { background: #f6ffed; color: #389e0d; }
+
+@media (max-width: 768px) { .dept-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="page-header" style="margin-bottom:20px">
+    <div class="page-header-left">
+        <h2 style="font-size:16px;margin:0;">Cơ cấu tổ chức</h2>
+    </div>
+    <div class="page-header-right">
+        <button class="btn btn-default" onclick="showModal('posModal')"><i class="fas fa-plus"></i> Thêm chức vụ</button>
+        <button class="btn btn-primary" onclick="showModal('deptModal')"><i class="fas fa-plus"></i> Thêm phòng ban</button>
+    </div>
+</div>
+
+<!-- Departments -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-sitemap" style="margin-right:8px;color:var(--primary)"></i> Phòng ban</h3></div>
+    <div class="card-body">
+        {% if departments %}
+        <div class="dept-grid">
+            {% for dept in departments %}
+            <div class="dept-card">
+                <div class="dept-main">
+                    <div class="dept-name">{{ dept.name }}</div>
+                    <div class="dept-meta">
+                        {% if dept.manager %}<span><i class="fas fa-user-tie"></i> {{ dept.manager.full_name or dept.manager.username }}</span>{% endif %}
+                        <span><i class="fas fa-users"></i> {{ dept.members|length }} nhân viên</span>
+                        {% if dept.parent %}<span><i class="fas fa-level-up-alt"></i> {{ dept.parent.name }}</span>{% endif %}
+                    </div>
+                    {% if dept.description %}<p style="font-size:12px;color:#8c8c8c;margin-top:6px;">{{ dept.description }}</p>{% endif %}
+                    {% if dept.members %}
+                    <div class="member-list">
+                        {% for m in dept.members[:6] %}
+                        <span class="member-tag">
+                            <span class="avatar-sm">{{ (m.full_name or m.username)[0]|upper }}</span>
+                            {{ m.full_name or m.username }}
+                        </span>
+                        {% endfor %}
+                        {% if dept.members|length > 6 %}<span class="member-tag">+{{ dept.members|length - 6 }}</span>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="dept-actions">
+                    <button class="btn-icon" onclick="editDept({{ dept.id }}, '{{ dept.name }}', '{{ dept.description or '' }}', {{ dept.parent_id or 'null' }}, {{ dept.manager_id or 'null' }})" title="Sửa"><i class="fas fa-edit"></i></button>
+                    <form method="POST" action="{{ url_for('departments.delete_dept', id=dept.id) }}" style="display:inline" onsubmit="return confirm('Xóa phòng ban này?')">
+                        <button type="submit" class="btn-icon" title="Xóa"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center" style="padding:30px">Chưa có phòng ban nào. Hãy tạo phòng ban đầu tiên!</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Positions -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-id-badge" style="margin-right:8px;color:var(--orange)"></i> Chức vụ</h3></div>
+    <div class="card-body">
+        {% if positions %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Chức vụ</th>
+                    <th>Cấp bậc</th>
+                    <th>Phòng ban</th>
+                    <th>Số nhân viên</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pos in positions %}
+                <tr>
+                    <td><strong>{{ pos.name }}</strong></td>
+                    <td>
+                        <div class="pos-level">
+                            <div class="level-dots">
+                                {% for i in range(5) %}
+                                <div class="level-dot {% if i < pos.level %}active{% endif %}"></div>
+                                {% endfor %}
+                            </div>
+                            <span style="font-size:11px;color:#8c8c8c">{{ pos.level }}</span>
+                        </div>
+                    </td>
+                    <td>{{ pos.department.name if pos.department else '—' }}</td>
+                    <td>{{ pos.users|length }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-icon" onclick="editPos({{ pos.id }}, '{{ pos.name }}', {{ pos.level }}, {{ pos.department_id or 'null' }}, '{{ pos.description or '' }}')" title="Sửa"><i class="fas fa-edit"></i></button>
+                            <form method="POST" action="{{ url_for('departments.delete_pos', id=pos.id) }}" style="display:inline" onsubmit="return confirm('Xóa chức vụ này?')">
+                                <button type="submit" class="btn-icon" title="Xóa"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center" style="padding:20px">Chưa có chức vụ nào.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Users Assignment -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-user-cog" style="margin-right:8px;color:var(--success)"></i> Gán nhân viên</h3></div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr><th>Nhân viên</th><th>Email</th><th>Phòng ban</th><th>Chức vụ</th><th>Vai trò</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><strong>{{ u.full_name or u.username }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.department.name if u.department else '—' }}</td>
+                    <td>{{ u.position.name if u.position else '—' }}</td>
+                    <td>
+                        {% if u.role_obj %}<span class="role-badge role-{{ 'admin' if u.role == 'admin' else 'user' }}">{{ u.role_obj.name }}</span>
+                        {% else %}<span class="role-badge role-{{ u.role }}">{{ u.role }}</span>{% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-default" onclick="assignUser({{ u.id }}, '{{ u.full_name or u.username }}', {{ u.department_id or 'null' }}, {{ u.position_id or 'null' }}, {{ u.role_id or 'null' }})"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Department Modal -->
+<div class="modal-overlay" id="deptModal" onclick="if(event.target===this)closeModal('deptModal')">
+    <div class="modal-box">
+        <div class="modal-title" id="deptModalTitle">Thêm phòng ban</div>
+        <form method="POST" id="deptForm" action="{{ url_for('departments.create_dept') }}">
+            <div class="form-group">
+                <label>Tên phòng ban <span class="required">*</span></label>
+                <input type="text" name="name" id="deptName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Mô tả</label>
+                <textarea name="description" id="deptDesc" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Phòng ban cha</label>
+                <select name="parent_id" id="deptParent" class="form-control">
+                    <option value="">— Không —</option>
+                    {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Trưởng phòng</label>
+                <select name="manager_id" id="deptManager" class="form-control">
+                    <option value="">— Chọn —</option>
+                    {% for u in users %}<option value="{{ u.id }}">{{ u.full_name or u.username }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-default" onclick="closeModal('deptModal')">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Position Modal -->
+<div class="modal-overlay" id="posModal" onclick="if(event.target===this)closeModal('posModal')">
+    <div class="modal-box">
+        <div class="modal-title" id="posModalTitle">Thêm chức vụ</div>
+        <form method="POST" id="posForm" action="{{ url_for('departments.create_pos') }}">
+            <div class="form-group">
+                <label>Tên chức vụ <span class="required">*</span></label>
+                <input type="text" name="name" id="posName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Cấp bậc (1-10)</label>
+                <input type="number" name="level" id="posLevel" class="form-control" min="1" max="10" value="1">
+            </div>
+            <div class="form-group">
+                <label>Phòng ban</label>
+                <select name="department_id" id="posDept" class="form-control">
+                    <option value="">— Tất cả —</option>
+                    {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Mô tả</label>
+                <textarea name="description" id="posDesc" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-default" onclick="closeModal('posModal')">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Assign User Modal -->
+<div class="modal-overlay" id="assignModal" onclick="if(event.target===this)closeModal('assignModal')">
+    <div class="modal-box">
+        <div class="modal-title">Gán nhân viên: <span id="assignUserName"></span></div>
+        <form method="POST" action="{{ url_for('departments.assign_user') }}">
+            <input type="hidden" name="user_id" id="assignUserId">
+            <div class="form-group">
+                <label>Phòng ban</label>
+                <select name="department_id" id="assignDept" class="form-control">
+                    <option value="">— Không —</option>
+                    {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Chức vụ</label>
+                <select name="position_id" id="assignPos" class="form-control">
+                    <option value="">— Không —</option>
+                    {% for p in positions %}<option value="{{ p.id }}">{{ p.name }}{% if p.department %} ({{ p.department.name }}){% endif %}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Vai trò phân quyền</label>
+                <select name="role_id" id="assignRole" class="form-control">
+                    <option value="">— Giữ nguyên —</option>
+                    {% for r in roles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-default" onclick="closeModal('assignModal')">Hủy</button>
+                <button type="submit" class="btn btn-primary">Cập nhật</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function editDept(id, name, desc, parentId, managerId) {
+    document.getElementById('deptModalTitle').textContent = 'Sửa phòng ban';
+    document.getElementById('deptName').value = name;
+    document.getElementById('deptDesc').value = desc;
+    document.getElementById('deptParent').value = parentId || '';
+    document.getElementById('deptManager').value = managerId || '';
+    document.getElementById('deptForm').action = `/departments/${id}/edit`;
+    showModal('deptModal');
+}
+
+function editPos(id, name, level, deptId, desc) {
+    document.getElementById('posModalTitle').textContent = 'Sửa chức vụ';
+    document.getElementById('posName').value = name;
+    document.getElementById('posLevel').value = level;
+    document.getElementById('posDept').value = deptId || '';
+    document.getElementById('posDesc').value = desc;
+    document.getElementById('posForm').action = `/departments/positions/${id}/edit`;
+    showModal('posModal');
+}
+
+function assignUser(userId, userName, deptId, posId, roleId) {
+    document.getElementById('assignUserName').textContent = userName;
+    document.getElementById('assignUserId').value = userId;
+    document.getElementById('assignDept').value = deptId || '';
+    document.getElementById('assignPos').value = posId || '';
+    document.getElementById('assignRole').value = roleId || '';
+    showModal('assignModal');
+}
+</script>
+{% endblock %}

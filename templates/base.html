@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CRM{% endblock %} - CRM Pro</title>
+    <meta name="description" content="Phần mềm quản lý quan hệ khách hàng chuẩn SaaS">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="app-layout">
+        <!-- ===== TOP BAR — Phân hệ chính ===== -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <a href="{{ url_for('dashboard.index') }}" class="topbar-logo">
+                    <i class="fas fa-chart-line"></i>
+                    <span>CRM Pro</span>
+                </a>
+                <div class="topbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm..." id="globalSearch">
+                </div>
+            </div>
+            <nav class="topbar-nav">
+                <a href="{{ url_for('dashboard.index') }}" class="topbar-nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <i class="fas fa-th-large"></i> Tổng quan
+                </a>
+                <a href="{{ url_for('deals.pipeline') }}" class="topbar-nav-item {% if request.blueprint == 'deals' %}active{% endif %}">
+                    <i class="fas fa-handshake"></i> Deals
+                </a>
+                <a href="{{ url_for('contacts.list_contacts') }}" class="topbar-nav-item {% if request.blueprint == 'contacts' %}active{% endif %}">
+                    <i class="fas fa-users"></i> Liên hệ
+                </a>
+                <a href="{{ url_for('companies.list_companies') }}" class="topbar-nav-item {% if request.blueprint == 'companies' %}active{% endif %}">
+                    <i class="fas fa-building"></i> Công ty
+                </a>
+                <a href="{{ url_for('quotes.list_quotes') }}" class="topbar-nav-item {% if request.blueprint == 'quotes' %}active{% endif %}">
+                    <i class="fas fa-file-invoice-dollar"></i> Báo giá
+                </a>
+                <a href="{{ url_for('products.list_products') }}" class="topbar-nav-item {% if request.blueprint == 'products' %}active{% endif %}">
+                    <i class="fas fa-boxes"></i> Sản phẩm
+                </a>
+                <a href="{{ url_for('employees.list_employees') }}" class="topbar-nav-item {% if request.blueprint in ('employees','departments','team') %}active{% endif %}">
+                    <i class="fas fa-user-tie"></i> Nhân sự
+                </a>
+            </nav>
+            <div class="topbar-right">
+                <button class="topbar-icon-btn" id="btnOnlineUsers" title="Nhân viên online" onclick="toggleOnlinePanel()">
+                    <i class="fas fa-users"></i>
+                    <span class="online-badge" id="onlineBadge" style="display:none"></span>
+                </button>
+                <button class="topbar-icon-btn" id="btnChat" title="Chat" onclick="toggleChatPanel()">
+                    <i class="fas fa-comments"></i>
+                    <span class="chat-badge" id="chatBadge" style="display:none"></span>
+                </button>
+                <button class="topbar-icon-btn" title="Thông báo"><i class="fas fa-bell"></i></button>
+                <div class="topbar-user">
+                    <div class="topbar-avatar">{{ (current_user.full_name or current_user.username)[0]|upper }}</div>
+                    <span class="topbar-username">{{ current_user.full_name or current_user.username }}</span>
+                    <div class="topbar-user-dropdown">
+                        <div class="dropdown-header">
+                            <strong>{{ current_user.full_name or current_user.username }}</strong>
+                            <small>{{ current_user.tenant.name }}</small>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('team.statistics') }}" class="dropdown-item"><i class="fas fa-chart-bar"></i> Thống kê NV</a>
+                        <a href="{{ url_for('team.activity_log') }}" class="dropdown-item"><i class="fas fa-history"></i> Log hoạt động</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.field_config') }}" class="dropdown-item"><i class="fas fa-cog"></i> Cài đặt</a>
+                        <a href="{{ url_for('settings.permissions') }}" class="dropdown-item"><i class="fas fa-shield-alt"></i> Phân quyền</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('auth.logout') }}" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== LEFT SIDEBAR — Sub-functions cho phân hệ đang chọn ===== -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+
+                {% if request.blueprint == 'deals' or request.endpoint == 'deals.pipeline' %}
+                <!-- DEALS sub-menu -->
+                <div class="sidebar-section-title">Deals</div>
+                <a href="{{ url_for('deals.pipeline') }}" class="sidebar-item {% if request.endpoint == 'deals.pipeline' %}active{% endif %}">
+                    <i class="fas fa-columns"></i><span>Pipeline</span>
+                </a>
+                <a href="{{ url_for('deals.list_deals') }}" class="sidebar-item {% if request.endpoint == 'deals.list_deals' %}active{% endif %}">
+                    <i class="fas fa-list"></i><span>Danh sách</span>
+                </a>
+                <a href="{{ url_for('deals.create') }}" class="sidebar-item {% if request.endpoint == 'deals.create' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i><span>Tạo mới</span>
+                </a>
+
+                {% elif request.blueprint == 'contacts' %}
+                <!-- CONTACTS sub-menu -->
+                <div class="sidebar-section-title">Liên hệ</div>
+                <a href="{{ url_for('contacts.list_contacts') }}" class="sidebar-item {% if request.endpoint == 'contacts.list_contacts' %}active{% endif %}">
+                    <i class="fas fa-list"></i><span>Danh sách</span>
+                </a>
+                <a href="{{ url_for('contacts.create') }}" class="sidebar-item {% if request.endpoint == 'contacts.create' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i><span>Thêm mới</span>
+                </a>
+
+                {% elif request.blueprint == 'companies' %}
+                <!-- COMPANIES sub-menu -->
+                <div class="sidebar-section-title">Công ty</div>
+                <a href="{{ url_for('companies.list_companies') }}" class="sidebar-item {% if request.endpoint == 'companies.list_companies' %}active{% endif %}">
+                    <i class="fas fa-list"></i><span>Danh sách</span>
+                </a>
+                <a href="{{ url_for('companies.create') }}" class="sidebar-item {% if request.endpoint == 'companies.create' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i><span>Thêm mới</span>
+                </a>
+
+                {% elif request.blueprint == 'quotes' %}
+                <!-- QUOTES sub-menu -->
+                <div class="sidebar-section-title">Báo giá</div>
+                <a href="{{ url_for('quotes.list_quotes') }}" class="sidebar-item {% if request.endpoint == 'quotes.list_quotes' %}active{% endif %}">
+                    <i class="fas fa-list"></i><span>Danh sách</span>
+                </a>
+                <a href="{{ url_for('quotes.create') }}" class="sidebar-item {% if request.endpoint == 'quotes.create' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i><span>Tạo mới</span>
+                </a>
+                <a href="{{ url_for('products.list_products') }}" class="sidebar-item">
+                    <i class="fas fa-boxes"></i><span>Sản phẩm</span>
+                </a>
+
+                {% elif request.blueprint == 'products' %}
+                <!-- PRODUCTS sub-menu -->
+                <div class="sidebar-section-title">Kho & Sản phẩm</div>
+                <a href="{{ url_for('products.list_products') }}" class="sidebar-item {% if request.endpoint == 'products.list_products' %}active{% endif %}">
+                    <i class="fas fa-list"></i><span>Danh sách</span>
+                </a>
+                <a href="{{ url_for('products.create') }}" class="sidebar-item {% if request.endpoint == 'products.create' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i><span>Thêm mới</span>
+                </a>
+                <a href="{{ url_for('products.list_orders') }}" class="sidebar-item {% if request.endpoint in ('products.list_orders','products.create_order','products.order_detail','products.edit_order') %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i><span>Phiếu nhập xuất</span>
+                </a>
+                <a href="{{ url_for('products.list_counts') }}" class="sidebar-item {% if request.endpoint in ('products.list_counts','products.create_count','products.count_detail') %}active{% endif %}">
+                    <i class="fas fa-clipboard-check"></i><span>Kiểm kho</span>
+                </a>
+                <a href="{{ url_for('products.all_transactions') }}" class="sidebar-item {% if request.endpoint == 'products.all_transactions' %}active{% endif %}">
+                    <i class="fas fa-exchange-alt"></i><span>Lịch sử giao dịch</span>
+                </a>
+                <a href="{{ url_for('products.import_excel') }}" class="sidebar-item {% if request.endpoint == 'products.import_excel' %}active{% endif %}">
+                    <i class="fas fa-file-excel"></i><span>Import Excel</span>
+                </a>
+                <a href="{{ url_for('products.export_excel') }}" class="sidebar-item">
+                    <i class="fas fa-download"></i><span>Export Excel</span>
+                </a>
+
+                {% elif request.blueprint == 'activities' %}
+                <!-- ACTIVITIES sub-menu -->
+                <div class="sidebar-section-title">Hoạt động</div>
+                <a href="{{ url_for('activities.list_activities') }}" class="sidebar-item {% if request.endpoint == 'activities.list_activities' %}active{% endif %}">
+                    <i class="fas fa-list"></i><span>Danh sách</span>
+                </a>
+                <a href="{{ url_for('activities.create') }}" class="sidebar-item {% if request.endpoint == 'activities.create' %}active{% endif %}">
+                    <i class="fas fa-plus-circle"></i><span>Tạo mới</span>
+                </a>
+
+                {% elif request.blueprint == 'settings' %}
+                <!-- SETTINGS sub-menu -->
+                <div class="sidebar-section-title">Cài đặt</div>
+                <a href="{{ url_for('settings.field_config') }}" class="sidebar-item {% if request.endpoint == 'settings.field_config' %}active{% endif %}">
+                    <i class="fas fa-sliders-h"></i><span>Tùy chỉnh trường</span>
+                </a>
+                <a href="{{ url_for('settings.permissions') }}" class="sidebar-item {% if request.endpoint == 'settings.permissions' %}active{% endif %}">
+                    <i class="fas fa-shield-alt"></i><span>Phân quyền</span>
+                </a>
+                <a href="{{ url_for('departments.list_departments') }}" class="sidebar-item">
+                    <i class="fas fa-sitemap"></i><span>Phòng ban</span>
+                </a>
+
+                {% elif request.blueprint in ('employees', 'departments', 'team') %}
+                <!-- HR sub-menu -->
+                <div class="sidebar-section-title">Nhân sự</div>
+                <a href="{{ url_for('employees.list_employees') }}" class="sidebar-item {% if request.endpoint == 'employees.list_employees' %}active{% endif %}">
+                    <i class="fas fa-users"></i><span>Danh sách NV</span>
+                </a>
+                <a href="{{ url_for('employees.create_employee') }}" class="sidebar-item {% if request.endpoint == 'employees.create_employee' %}active{% endif %}">
+                    <i class="fas fa-user-plus"></i><span>Thêm NV mới</span>
+                </a>
+                <a href="{{ url_for('employees.org_chart') }}" class="sidebar-item {% if request.endpoint == 'employees.org_chart' %}active{% endif %}">
+                    <i class="fas fa-sitemap"></i><span>Sơ đồ tổ chức</span>
+                </a>
+                <a href="{{ url_for('departments.list_departments') }}" class="sidebar-item {% if request.endpoint == 'departments.list_departments' %}active{% endif %}">
+                    <i class="fas fa-building"></i><span>Phòng ban & Chức vụ</span>
+                </a>
+                <div class="sidebar-section-title" style="margin-top:12px">Giám sát</div>
+                <a href="{{ url_for('team.activity_log') }}" class="sidebar-item {% if request.endpoint == 'team.activity_log' %}active{% endif %}">
+                    <i class="fas fa-history"></i><span>Log hoạt động</span>
+                </a>
+                <a href="{{ url_for('team.statistics') }}" class="sidebar-item {% if request.endpoint == 'team.statistics' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i><span>Thống kê NV</span>
+                </a>
+
+                {% else %}
+                <!-- DASHBOARD / DEFAULT sub-menu -->
+                <div class="sidebar-section-title">Tổng quan</div>
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item active">
+                    <i class="fas fa-th-large"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('activities.list_activities') }}" class="sidebar-item">
+                    <i class="fas fa-tasks"></i><span>Hoạt động</span>
+                </a>
+                <a href="{{ url_for('deals.pipeline') }}" class="sidebar-item">
+                    <i class="fas fa-columns"></i><span>Pipeline</span>
+                </a>
+
+                {% endif %}
+
+                <!-- Common bottom links -->
+                <div class="sidebar-spacer"></div>
+                <a href="{{ url_for('settings.field_config') }}" class="sidebar-item {% if request.blueprint == 'settings' and request.endpoint == 'settings.field_config' %}active{% endif %}" title="Cài đặt">
+                    <i class="fas fa-cog"></i><span>Cài đặt</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            <!-- Breadcrumbs -->
+            {% block breadcrumbs %}
+            <div class="breadcrumbs">
+                <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+                <i class="fas fa-chevron-right breadcrumb-sep"></i>
+                <span class="breadcrumb-current">{% block page_title %}{% endblock %}</span>
+            </div>
+            {% endblock %}
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}" onclick="this.remove()">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
+                        <button class="flash-close">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Auto-save indicator -->
+            <div id="autoSaveIndicator" class="autosave-indicator" style="display:none">
+                <i class="fas fa-circle-notch fa-spin"></i> <span>Đang lưu...</span>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    {% else %}
+    {% block auth_content %}{% endblock %}
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+    // User dropdown toggle
+    document.addEventListener('click', function(e) {
+        var userEl = document.querySelector('.topbar-user');
+        if (userEl) {
+            if (e.target.closest('.topbar-user')) {
+                userEl.classList.toggle('open');
+            } else {
+                userEl.classList.remove('open');
+            }
+        }
+    });
+
+    // ===== AUTO-SAVE =====
+    (function() {
+        var autoSaveForms = document.querySelectorAll('form[data-autosave]');
+        autoSaveForms.forEach(function(form) {
+            var timer = null;
+            var indicator = document.getElementById('autoSaveIndicator');
+            var inputs = form.querySelectorAll('input, select, textarea');
+
+            function triggerSave() {
+                if (indicator) {
+                    indicator.style.display = 'flex';
+                    indicator.querySelector('span').textContent = 'Đang lưu...';
+                    indicator.classList.remove('saved');
+                    indicator.classList.add('saving');
+                }
+                var formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(function(r) {
+                    if (r.ok) {
+                        if (indicator) {
+                            indicator.querySelector('i').className = 'fas fa-check-circle';
+                            indicator.querySelector('span').textContent = 'Đã lưu';
+                            indicator.classList.remove('saving');
+                            indicator.classList.add('saved');
+                            setTimeout(function() {
+                                indicator.querySelector('i').className = 'fas fa-circle-notch fa-spin';
+                                indicator.style.display = 'none';
+                            }, 2000);
+                        }
+                    }
+                }).catch(function() {
+                    if (indicator) {
+                        indicator.querySelector('i').className = 'fas fa-exclamation-circle';
+                        indicator.querySelector('span').textContent = 'Lỗi lưu';
+                        indicator.classList.remove('saving');
+                    }
+                });
+            }
+
+            inputs.forEach(function(input) {
+                var eventType = (input.tagName === 'SELECT') ? 'change' : 'input';
+                input.addEventListener(eventType, function() {
+                    clearTimeout(timer);
+                    timer = setTimeout(triggerSave, 1200);
+                });
+            });
+
+            // Prevent default submit — auto-save handles it
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                clearTimeout(timer);
+                triggerSave();
+            });
+        });
+    })();
+    </script>
+    <!-- ===== ONLINE USERS PANEL ===== -->
+    <div class="slide-panel" id="onlinePanel" style="display:none">
+        <div class="slide-panel-header">
+            <h4><i class="fas fa-users" style="color:var(--primary);margin-right:6px"></i>Nhân viên</h4>
+            <button class="slide-panel-close" onclick="toggleOnlinePanel()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="slide-panel-body" id="onlineList"></div>
+        <div class="slide-panel-footer">
+            <a href="{{ url_for('team.statistics') }}" class="btn btn-primary btn-sm" style="width:100%"><i class="fas fa-chart-bar"></i> Thống kê NV</a>
+        </div>
+    </div>
+
+    <!-- ===== CHAT PANEL ===== -->
+    <div class="slide-panel" id="chatPanel" style="display:none">
+        <div class="slide-panel-header">
+            <h4 id="chatTitle"><i class="fas fa-comments" style="color:var(--primary);margin-right:6px"></i>Chat</h4>
+            <button class="slide-panel-close" onclick="toggleChatPanel()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="slide-panel-body" id="chatBody">
+            <!-- Contact list or messages will be injected here -->
+        </div>
+        <div class="slide-panel-footer" id="chatFooter" style="display:none">
+            <div style="display:flex;gap:6px">
+                <input type="text" id="chatInput" class="form-control" placeholder="Nhập tin nhắn..." style="flex:1" onkeypress="if(event.key==='Enter')sendChat()">
+                <button class="btn btn-primary btn-sm" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="slide-panel-overlay" id="panelOverlay" style="display:none" onclick="closeAllPanels()"></div>
+
+    <style>
+    .online-badge,.chat-badge{position:absolute;top:4px;right:4px;min-width:16px;height:16px;border-radius:8px;background:#ff4d4f;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+    .topbar-icon-btn{position:relative;}
+    .slide-panel{position:fixed;top:0;right:-380px;width:360px;height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,0.1);z-index:1100;display:flex;flex-direction:column;transition:right 0.25s ease;}
+    .slide-panel.open{right:0;}
+    .slide-panel-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.2);z-index:1090;}
+    .slide-panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .slide-panel-header h4{margin:0;font-size:15px;font-weight:700;}
+    .slide-panel-close{background:none;border:none;font-size:18px;color:var(--text-secondary);cursor:pointer;padding:4px;}
+    .slide-panel-body{flex:1;overflow-y:auto;padding:0;}
+    .slide-panel-footer{padding:12px 16px;border-top:1px solid var(--border);}
+
+    .ou-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background 0.1s;}
+    .ou-item:hover{background:#fafafa;}
+    .ou-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;position:relative;flex-shrink:0;}
+    .ou-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;border:2px solid #fff;}
+    .ou-info{flex:1;min-width:0;}
+    .ou-name{font-weight:600;font-size:13px;}
+    .ou-status{font-size:11px;color:var(--text-secondary);}
+    .ou-module{font-size:10px;padding:1px 6px;border-radius:6px;background:#f0f0f0;}
+
+    .chat-contact{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background 0.1s;}
+    .chat-contact:hover{background:#fafafa;}
+    .chat-contact .unread-dot{width:8px;height:8px;border-radius:50%;background:#ff4d4f;flex-shrink:0;}
+
+    .chat-back{display:flex;align-items:center;gap:6px;padding:8px 16px;border-bottom:1px solid var(--border);cursor:pointer;color:var(--text-secondary);font-size:13px;}
+    .chat-back:hover{background:#fafafa;}
+
+    .chat-messages{padding:12px 16px;display:flex;flex-direction:column;gap:6px;min-height:100%;}
+    .chat-msg{max-width:80%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.4;word-break:break-word;}
+    .chat-msg.mine{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:4px;}
+    .chat-msg.theirs{align-self:flex-start;background:#f0f0f0;color:var(--text-primary);border-bottom-left-radius:4px;}
+    .chat-msg .msg-time{font-size:10px;opacity:0.7;margin-top:2px;}
+    </style>
+
+    <script>
+    // ===== HEARTBEAT =====
+    (function(){
+        function sendHeartbeat(){
+            var module = document.body.dataset.module || '{{ request.blueprint or "" }}';
+            var page = location.pathname;
+            fetch('/team/api/heartbeat',{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({module:module,page:page})
+            }).then(function(r){return r.json()}).then(function(d){
+                var badge=document.getElementById('chatBadge');
+                if(d.unread>0){badge.textContent=d.unread;badge.style.display='flex';}
+                else{badge.style.display='none';}
+            }).catch(function(){});
+        }
+        sendHeartbeat();
+        setInterval(sendHeartbeat,30000);
+    })();
+
+    // ===== ONLINE USERS PANEL =====
+    function toggleOnlinePanel(){
+        var p=document.getElementById('onlinePanel');
+        var o=document.getElementById('panelOverlay');
+        closeAllPanels();
+        if(!p.classList.contains('open')){
+            p.style.display='flex';setTimeout(function(){p.classList.add('open');},10);
+            o.style.display='block';
+            loadOnlineUsers();
+        }
+    }
+    function loadOnlineUsers(){
+        fetch('/team/api/online').then(function(r){return r.json()}).then(function(users){
+            var html='';var onlineCount=0;
+            users.forEach(function(u){
+                if(u.status==='online')onlineCount++;
+                html+='<div class="ou-item" onclick="openChatWith('+u.id+',\''+u.full_name.replace(/'/g,"\\'")+'\')">'+
+                    '<div class="ou-avatar">'+u.initials+'<div class="ou-dot" style="background:'+u.color+'"></div></div>'+
+                    '<div class="ou-info"><div class="ou-name">'+u.full_name+(u.is_me?' (Bạn)':'')+'</div>'+
+                    '<div class="ou-status"><span style="color:'+u.color+'">'+u.label+'</span>'+
+                    (u.module?' · <span class="ou-module">'+u.module+'</span>':'')+'</div></div></div>';
+            });
+            document.getElementById('onlineList').innerHTML=html||'<div style="padding:30px;text-align:center;color:var(--text-secondary)">Không có nhân viên</div>';
+            var badge=document.getElementById('onlineBadge');
+            if(onlineCount>0){badge.textContent=onlineCount;badge.style.display='flex';}else{badge.style.display='none';}
+        });
+    }
+
+    // ===== CHAT PANEL =====
+    var currentChatUser=null;
+    var chatPollTimer=null;
+
+    function toggleChatPanel(){
+        var p=document.getElementById('chatPanel');
+        var o=document.getElementById('panelOverlay');
+        closeAllPanels();
+        if(!p.classList.contains('open')){
+            p.style.display='flex';setTimeout(function(){p.classList.add('open');},10);
+            o.style.display='block';
+            showChatContacts();
+        }
+    }
+    function closeAllPanels(){
+        var panels=document.querySelectorAll('.slide-panel');
+        panels.forEach(function(p){p.classList.remove('open');setTimeout(function(){if(!p.classList.contains('open'))p.style.display='none';},250);});
+        document.getElementById('panelOverlay').style.display='none';
+        if(chatPollTimer){clearInterval(chatPollTimer);chatPollTimer=null;}
+        currentChatUser=null;
+    }
+    function showChatContacts(){
+        currentChatUser=null;
+        document.getElementById('chatTitle').innerHTML='<i class="fas fa-comments" style="color:var(--primary);margin-right:6px"></i>Chat';
+        document.getElementById('chatFooter').style.display='none';
+        if(chatPollTimer){clearInterval(chatPollTimer);chatPollTimer=null;}
+
+        fetch('/team/api/chat/contacts').then(function(r){return r.json()}).then(function(contacts){
+            var html='';
+            contacts.forEach(function(c){
+                html+='<div class="chat-contact" onclick="openChatWith('+c.id+',\''+c.full_name.replace(/'/g,"\\'")+'\')">'+
+                    '<div class="ou-avatar" style="width:32px;height:32px;font-size:12px">'+c.initials+'<div class="ou-dot" style="background:'+c.color+';width:8px;height:8px"></div></div>'+
+                    '<div class="ou-info"><div class="ou-name">'+c.full_name+'</div>'+
+                    '<div class="ou-status">'+c.last_message+'</div></div>'+
+                    (c.unread>0?'<div class="unread-dot"></div>':'')+'</div>';
+            });
+            document.getElementById('chatBody').innerHTML=html||'<div style="padding:30px;text-align:center;color:var(--text-secondary)">Không có đồng nghiệp</div>';
+        });
+    }
+    function openChatWith(userId,name){
+        // Close online panel if open
+        var op=document.getElementById('onlinePanel');
+        op.classList.remove('open');setTimeout(function(){op.style.display='none';},250);
+
+        var cp=document.getElementById('chatPanel');
+        var ov=document.getElementById('panelOverlay');
+        cp.style.display='flex';setTimeout(function(){cp.classList.add('open');},10);
+        ov.style.display='block';
+
+        currentChatUser=userId;
+        document.getElementById('chatTitle').innerHTML='<i class="fas fa-comment" style="color:var(--primary);margin-right:6px"></i>'+name;
+        document.getElementById('chatFooter').style.display='block';
+        document.getElementById('chatInput').value='';
+        loadMessages(userId);
+        if(chatPollTimer)clearInterval(chatPollTimer);
+        chatPollTimer=setInterval(function(){loadMessages(userId);},5000);
+    }
+    function loadMessages(userId){
+        fetch('/team/api/chat/messages/'+userId).then(function(r){return r.json()}).then(function(msgs){
+            var html='<div class="chat-back" onclick="showChatContacts()"><i class="fas fa-arrow-left"></i> Danh sách</div>';
+            html+='<div class="chat-messages">';
+            if(msgs.length===0)html+='<div style="text-align:center;color:var(--text-secondary);padding:20px;font-size:13px">Chưa có tin nhắn</div>';
+            msgs.forEach(function(m){
+                html+='<div class="chat-msg '+(m.is_mine?'mine':'theirs')+'">'+m.message+
+                    '<div class="msg-time">'+m.time+'</div></div>';
+            });
+            html+='</div>';
+            document.getElementById('chatBody').innerHTML=html;
+            var body=document.getElementById('chatBody');
+            body.scrollTop=body.scrollHeight;
+        });
+    }
+    function sendChat(){
+        var input=document.getElementById('chatInput');
+        var msg=input.value.trim();
+        if(!msg||!currentChatUser)return;
+        input.value='';
+        fetch('/team/api/chat/send',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({receiver_id:currentChatUser,message:msg})
+        }).then(function(){loadMessages(currentChatUser);});
+    }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

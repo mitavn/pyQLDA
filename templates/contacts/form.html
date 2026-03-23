@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "includes/_dynamic_form.html" import render_field %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>{{ title }}</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" class="dynamic-form">
+            {% set grouped = {} %}
+            {% for fc in field_configs %}
+                {% set group = fc.group_name or 'Khác' %}
+                {% if group not in grouped %}
+                    {% set _ = grouped.update({group: []}) %}
+                {% endif %}
+                {% set _ = grouped[group].append(fc) %}
+            {% endfor %}
+
+            {% for group_name, fields in grouped.items() %}
+            <div class="form-section">
+                <h4 class="form-section-title">{{ group_name }}</h4>
+                <div class="form-grid">
+                    {% for fc in fields %}
+                        {{ render_field(fc, contact, companies) }}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {{ 'Cập nhật' if contact else 'Tạo mới' }}
+                </button>
+                <a href="{{ url_for('contacts.list_contacts') }}" class="btn btn-default">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

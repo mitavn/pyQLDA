@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}{% if employee %}Sửa {{ employee.full_name }}{% else %}Thêm nhân viên{% endif %}{% endblock %}
+{% block page_title %}{% if employee %}Sửa nhân viên{% else %}Thêm nhân viên{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('employees.list_employees') }}">Nhân viên</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{% if employee %}Sửa{% else %}Thêm mới{% endif %}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-section { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.form-section h4 { font-size: 14px; font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 16px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="{% if employee %}{{ url_for('employees.edit_employee', id=employee.id) }}{% else %}{{ url_for('employees.create_employee') }}{% endif %}">
+    <!-- Account -->
+    <div class="form-section">
+        <h4><i class="fas fa-user-lock" style="color:var(--primary)"></i>Tài khoản</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Username <span class="required">*</span></label>
+                <input type="text" name="username" class="form-control" value="{{ employee.username if employee else '' }}" {% if employee %}readonly style="background:#f5f5f5"{% else %}required{% endif %}>
+            </div>
+            <div class="form-group">
+                <label>Email <span class="required">*</span></label>
+                <input type="email" name="email" class="form-control" value="{{ employee.email if employee else '' }}" required>
+            </div>
+        </div>
+        {% if not employee %}
+        <div class="form-row">
+            <div class="form-group">
+                <label>Mật khẩu <span class="required">*</span></label>
+                <input type="password" name="password" class="form-control" required minlength="4" placeholder="Tối thiểu 4 ký tự">
+            </div>
+            <div class="form-group">
+                <label>Mã nhân viên</label>
+                <input type="text" name="employee_code" class="form-control" placeholder="VD: NV-001">
+            </div>
+        </div>
+        {% else %}
+        <div class="form-row">
+            <div class="form-group">
+                <label>Mật khẩu mới (để trống nếu không đổi)</label>
+                <input type="password" name="new_password" class="form-control" minlength="4">
+            </div>
+            <div class="form-group">
+                <label>Mã nhân viên</label>
+                <input type="text" name="employee_code" class="form-control" value="{{ employee.employee_code or '' }}">
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Personal Info -->
+    <div class="form-section">
+        <h4><i class="fas fa-user" style="color:#52c41a"></i>Thông tin cá nhân</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Họ và tên</label>
+                <input type="text" name="full_name" class="form-control" value="{{ employee.full_name or '' if employee else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="text" name="phone" class="form-control" value="{{ employee.phone or '' if employee else '' }}">
+            </div>
+        </div>
+        <div class="form-row-3">
+            <div class="form-group">
+                <label>Giới tính</label>
+                <select name="gender" class="form-control">
+                    <option value="">— Chọn —</option>
+                    <option value="male" {% if employee and employee.gender == 'male' %}selected{% endif %}>Nam</option>
+                    <option value="female" {% if employee and employee.gender == 'female' %}selected{% endif %}>Nữ</option>
+                    <option value="other" {% if employee and employee.gender == 'other' %}selected{% endif %}>Khác</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Ngày sinh</label>
+                <input type="date" name="date_of_birth" class="form-control" value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee and employee.date_of_birth else '' }}">
+            </div>
+            <div class="form-group">
+                <label>CCCD/CMND</label>
+                <input type="text" name="id_card" class="form-control" value="{{ employee.id_card or '' if employee else '' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Địa chỉ</label>
+            <input type="text" name="address" class="form-control" value="{{ employee.address or '' if employee else '' }}">
+        </div>
+    </div>
+
+    <!-- Work Info -->
+    <div class="form-section">
+        <h4><i class="fas fa-briefcase" style="color:#faad14"></i>Công việc</h4>
+        <div class="form-row-3">
+            <div class="form-group">
+                <label>Phòng ban</label>
+                <select name="department_id" class="form-control">
+                    <option value="">— Không —</option>
+                    {% for d in departments %}<option value="{{ d.id }}" {% if employee and employee.department_id == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Chức vụ</label>
+                <select name="position_id" class="form-control">
+                    <option value="">— Không —</option>
+                    {% for p in positions %}<option value="{{ p.id }}" {% if employee and employee.position_id == p.id %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Vai trò phân quyền</label>
+                <select name="role_id" class="form-control">
+                    <option value="">— Mặc định —</option>
+                    {% for r in roles %}<option value="{{ r.id }}" {% if employee and employee.role_id == r.id %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Ngày vào làm</label>
+                <input type="date" name="hire_date" class="form-control" value="{{ employee.hire_date.strftime('%Y-%m-%d') if employee and employee.hire_date else '' }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency & Bank -->
+    <div class="form-section">
+        <h4><i class="fas fa-shield-alt" style="color:#ff4d4f"></i>Liên hệ khẩn cấp & Ngân hàng</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Người liên hệ khẩn cấp</label>
+                <input type="text" name="emergency_contact" class="form-control" value="{{ employee.emergency_contact or '' if employee else '' }}">
+            </div>
+            <div class="form-group">
+                <label>SĐT khẩn cấp</label>
+                <input type="text" name="emergency_phone" class="form-control" value="{{ employee.emergency_phone or '' if employee else '' }}">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Số tài khoản ngân hàng</label>
+                <input type="text" name="bank_account" class="form-control" value="{{ employee.bank_account or '' if employee else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Tên ngân hàng</label>
+                <input type="text" name="bank_name" class="form-control" value="{{ employee.bank_name or '' if employee else '' }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Bio -->
+    <div class="form-section">
+        <h4><i class="fas fa-align-left" style="color:#1890ff"></i>Giới thiệu</h4>
+        <div class="form-group">
+            <textarea name="bio" class="form-control" rows="3" placeholder="Mô tả ngắn về nhân viên...">{{ employee.bio or '' if employee else '' }}</textarea>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a href="{{ url_for('employees.list_employees') }}" class="btn btn-default">Hủy</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {% if employee %}Cập nhật{% else %}Tạo nhân viên{% endif %}</button>
+    </div>
+</form>
+{% endblock %}

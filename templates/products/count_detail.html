@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ count.count_number }} — Kiểm kho{% endblock %}
+{% block page_title %}{{ count.count_number }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_counts') }}">Kiểm kho</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{{ count.count_number }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.ck-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.ck-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.ck-stat { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+.ck-stat .val { font-size: 24px; font-weight: 700; }
+.ck-stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.ck-table { width: 100%; border-collapse: collapse; }
+.ck-table th { padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+.ck-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ck-table input.form-control { padding: 6px 10px; font-size: 13px; width: 100px; text-align: center; }
+.ck-table .diff-pos { color: #52c41a; font-weight: 600; }
+.ck-table .diff-neg { color: #ff4d4f; font-weight: 600; }
+.ck-table .diff-zero { color: var(--text-secondary); }
+.ck-table tr.has-diff { background: #fffbe6; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="ck-header">
+    <div style="display:flex;align-items:center;gap:12px">
+        <span style="display:inline-flex;padding:5px 14px;border-radius:14px;font-size:13px;font-weight:600;color:#fff;background:{{ count.status_color }}">
+            <i class="fas fa-clipboard-check" style="margin-right:6px"></i>{{ count.status_label }}
+        </span>
+        <span style="font-size:13px;color:var(--text-secondary)">{{ count.created_at.strftime('%d/%m/%Y %H:%M') }} · {{ count.creator.full_name if count.creator else '' }}</span>
+    </div>
+    <div style="display:flex;gap:8px">
+        {% if count.status == 'draft' %}
+        <form method="POST" action="{{ url_for('products.complete_count', id=count.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận kiểm kho? Tồn kho sẽ được điều chỉnh theo số thực tế.')">
+            <button class="btn btn-primary"><i class="fas fa-check-circle"></i> Hoàn thành & Điều chỉnh kho</button>
+        </form>
+        <form method="POST" action="{{ url_for('products.cancel_count', id=count.id) }}" style="display:inline" onsubmit="return confirm('Hủy phiếu?')">
+            <button class="btn btn-danger btn-sm"><i class="fas fa-ban"></i> Hủy</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats -->
+{% set diff_items = count.items|selectattr('has_difference')|list %}
+{% set matched = count.items|rejectattr('has_difference')|list %}
+<div class="ck-stats">
+    <div class="ck-stat">
+        <div class="val" style="color:var(--primary)">{{ count.total_products }}</div>
+        <div class="lbl">Tổng sản phẩm</div>
+    </div>
+    <div class="ck-stat">
+        <div class="val" style="color:#52c41a">{{ matched|length }}</div>
+        <div class="lbl">Khớp</div>
+    </div>
+    <div class="ck-stat">
+        <div class="val" style="color:#ff4d4f">{{ diff_items|length }}</div>
+        <div class="lbl">Chênh lệch</div>
+    </div>
+    <div class="ck-stat">
+        <div class="val" style="color:{% if count.total_difference > 0 %}#52c41a{% elif count.total_difference < 0 %}#ff4d4f{% else %}var(--text-secondary){% endif %}">
+            {{ '+' if count.total_difference > 0 else '' }}{{ count.total_difference|int }}
+        </div>
+        <div class="lbl">Tổng chênh lệch</div>
+    </div>
+</div>
+
+{% if count.note %}
+<div style="margin-bottom:16px;padding:12px 16px;background:#fafafa;border:1px solid var(--border);border-radius:8px;font-size:13px">
+    <i class="fas fa-sticky-note" style="color:var(--text-secondary);margin-right:6px"></i>{{ count.note }}
+</div>
+{% endif %}
+
+<!-- Table -->
+<form method="POST" id="countForm" data-autosave>
+<div class="card">
+    <table class="ck-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>SKU</th>
+                <th>Sản phẩm</th>
+                <th>Đơn vị</th>
+                <th class="text-center">Tồn hệ thống</th>
+                <th class="text-center">Tồn thực tế</th>
+                <th class="text-center">Chênh lệch</th>
+                <th>Ghi chú</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in count.items %}
+            <tr class="{% if item.has_difference %}has-diff{% endif %}">
+                <td style="color:var(--text-secondary)">{{ loop.index }}</td>
+                <td style="font-family:monospace;font-size:12px">{{ item.product.sku or '-' }}</td>
+                <td style="font-weight:500">{{ item.product.name }}</td>
+                <td>{{ item.product.unit }}</td>
+                <td class="text-center" style="font-weight:600">{{ item.system_quantity|int }}</td>
+                <td class="text-center">
+                    {% if count.status == 'draft' %}
+                    <input type="number" name="actual_{{ item.id }}" class="form-control"
+                           value="{{ item.actual_quantity|int if item.actual_quantity is not none else '' }}"
+                           placeholder="{{ item.system_quantity|int }}"
+                           oninput="calcDiff(this, {{ item.system_quantity }})" step="1">
+                    {% else %}
+                    <strong>{{ item.actual_quantity|int if item.actual_quantity is not none else '-' }}</strong>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="diff-display {% if item.difference > 0 %}diff-pos{% elif item.difference < 0 %}diff-neg{% else %}diff-zero{% endif %}">
+                        {% if item.actual_quantity is not none %}
+                        {{ '+' if item.difference > 0 else '' }}{{ item.difference|int }}
+                        {% else %}-{% endif %}
+                    </span>
+                </td>
+                <td>
+                    {% if count.status == 'draft' %}
+                    <input type="text" name="note_{{ item.id }}" class="form-control" value="{{ item.note or '' }}" placeholder="..." style="width:120px">
+                    {% else %}
+                    <span style="font-size:12px">{{ item.note or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if count.status == 'draft' %}
+<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+    <button type="submit" class="btn btn-default"><i class="fas fa-save"></i> Lưu tạm</button>
+</div>
+{% endif %}
+</form>
+
+<script>
+function calcDiff(input, systemQty) {
+    var tr = input.closest('tr');
+    var actual = parseFloat(input.value);
+    var diffSpan = tr.querySelector('.diff-display');
+
+    if (isNaN(actual) || input.value === '') {
+        diffSpan.textContent = '-';
+        diffSpan.className = 'diff-display diff-zero';
+        tr.classList.remove('has-diff');
+        return;
+    }
+
+    var diff = actual - systemQty;
+    diffSpan.textContent = (diff > 0 ? '+' : '') + diff;
+    diffSpan.className = 'diff-display ' + (diff > 0 ? 'diff-pos' : diff < 0 ? 'diff-neg' : 'diff-zero');
+    tr.classList.toggle('has-diff', diff !== 0);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Báo giá{% endblock %}
+{% block page_title %}Báo giá{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <form class="search-form" method="GET">
+            <div class="input-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" class="form-control" placeholder="Tìm báo giá..." value="{{ search }}">
+            </div>
+            <select name="status" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">Tất cả trạng thái</option>
+                <option value="draft" {% if status == 'draft' %}selected{% endif %}>Nháp</option>
+                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Đã gửi</option>
+                <option value="accepted" {% if status == 'accepted' %}selected{% endif %}>Chấp nhận</option>
+                <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Từ chối</option>
+            </select>
+            <button type="submit" class="btn btn-default">Lọc</button>
+        </form>
+    </div>
+    <div class="page-header-right">
+        <a href="{{ url_for('quotes.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo báo giá</a>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>MÃ</th>
+                <th>TIÊU ĐỀ</th>
+                <th>KHÁCH HÀNG</th>
+                <th>TRẠNG THÁI</th>
+                <th>TỔNG GIÁ TRỊ</th>
+                <th>NGÀY TẠO</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for q in quotes.items %}
+            <tr>
+                <td style="color:var(--text-secondary)">{{ q.quote_number or '-' }}</td>
+                <td><a href="{{ url_for('quotes.detail', id=q.id) }}" class="text-link">{{ q.title }}</a></td>
+                <td>
+                    {% if q.company %}{{ q.company.name }}{% elif q.contact %}{{ q.contact.first_name }} {{ q.contact.last_name }}{% else %}-{% endif %}
+                </td>
+                <td>
+                    <span class="badge" style="background:{{ q.status_color }}20;color:{{ q.status_color }}">{{ q.status_label }}</span>
+                </td>
+                <td><strong>{{ q.grand_total|format_currency }}</strong> {{ q.currency }}</td>
+                <td>{{ q.created_at|format_date }}</td>
+                <td class="action-btns">
+                    <a href="{{ url_for('quotes.edit', id=q.id) }}" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                    <form method="POST" action="{{ url_for('quotes.delete', id=q.id) }}" style="display:inline" onsubmit="return confirm('Xóa báo giá này?')">
+                        <button class="btn-icon text-danger" title="Xóa"><i class="fas fa-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted" style="padding:40px">Chưa có báo giá nào</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if quotes.pages > 1 %}
+<div class="pagination">
+    {% if quotes.has_prev %}
+    <a href="?page={{ quotes.prev_num }}&search={{ search }}&status={{ status }}" class="btn btn-default btn-sm">&laquo; Trước</a>
+    {% endif %}
+    <span class="pagination-info">Trang {{ quotes.page }}/{{ quotes.pages }} ({{ quotes.total }} báo giá)</span>
+    {% if quotes.has_next %}
+    <a href="?page={{ quotes.next_num }}&search={{ search }}&status={{ status }}" class="btn btn-default btn-sm">Sau &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

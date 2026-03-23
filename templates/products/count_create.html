@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Tạo phiếu kiểm kho{% endblock %}
+{% block page_title %}Tạo phiếu kiểm kho{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_counts') }}">Kiểm kho</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Tạo phiếu</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.product-checkbox-list { max-height: 400px; overflow-y: auto; }
+.product-checkbox-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+.product-checkbox-item:hover { background: #fafafa; }
+.product-checkbox-item label { flex: 1; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.product-checkbox-item .stock-info { font-size: 12px; color: var(--text-secondary); min-width: 100px; text-align: right; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group">
+                <label>Ghi chú</label>
+                <textarea name="note" class="form-control" rows="2" placeholder="Kiểm kho định kỳ tháng 3/2026..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3><i class="fas fa-clipboard-check" style="color:var(--primary);margin-right:8px"></i>Chọn sản phẩm kiểm kho</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+                <span id="selectedCount" style="font-size:12px;color:var(--text-secondary)">0 đã chọn</span>
+                <button type="button" class="btn btn-default btn-sm" onclick="selectAll(true)">Chọn tất cả</button>
+                <button type="button" class="btn btn-default btn-sm" onclick="selectAll(false)">Bỏ chọn</button>
+            </div>
+        </div>
+        <div class="product-checkbox-list">
+            {% for p in products %}
+            <div class="product-checkbox-item">
+                <input type="checkbox" name="product_ids" value="{{ p.id }}" id="p{{ p.id }}" checked onchange="updateCount()">
+                <label for="p{{ p.id }}">
+                    <div>
+                        <div style="font-weight:500">{{ p.name }}</div>
+                        <div style="font-size:11px;color:var(--text-secondary)">{{ p.sku or '-' }} · {{ p.category }} · {{ p.unit }}</div>
+                    </div>
+                </label>
+                <div class="stock-info">
+                    Tồn: <strong>{{ p.stock_quantity|int }}</strong> {{ p.unit }}
+                </div>
+            </div>
+            {% else %}
+            <div style="padding:30px;text-align:center;color:var(--text-secondary)">Không có sản phẩm quản lý kho</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <a href="{{ url_for('products.list_counts') }}" class="btn btn-default">Hủy</a>
+        <button type="submit" class="btn btn-primary" style="padding:10px 32px"><i class="fas fa-clipboard-check"></i> Tạo phiếu kiểm kho</button>
+    </div>
+</form>
+
+<script>
+function selectAll(checked) {
+    document.querySelectorAll('[name="product_ids"]').forEach(function(cb){ cb.checked = checked; });
+    updateCount();
+}
+function updateCount() {
+    var count = document.querySelectorAll('[name="product_ids"]:checked').length;
+    document.getElementById('selectedCount').textContent = count + ' đã chọn';
+}
+updateCount();
+</script>
+{% endblock %}

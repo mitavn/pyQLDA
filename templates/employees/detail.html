@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}{{ employee.full_name or employee.username }}{% endblock %}
+{% block page_title %}{{ employee.full_name or employee.username }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('employees.list_employees') }}">Nhân viên</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{{ employee.full_name or employee.username }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-header { display: flex; align-items: center; gap: 20px; padding: 24px; background: #fff; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
+.profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 28px; flex-shrink: 0; position: relative; }
+.profile-dot { position: absolute; bottom: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #fff; }
+.profile-info { flex: 1; }
+.profile-name { font-size: 20px; font-weight: 700; }
+.profile-meta { font-size: 13px; color: var(--text-secondary); display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+.profile-meta i { margin-right: 4px; }
+.profile-tags { display: flex; gap: 6px; margin-top: 8px; }
+.profile-tag { padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+
+.profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.info-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.info-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+.info-label { width: 140px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+.info-value { font-size: 13px; font-weight: 500; }
+.info-row:last-child { border-bottom: none; }
+
+.activity-timeline { max-height: 400px; overflow-y: auto; }
+.timeline-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+.timeline-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; flex-shrink: 0; }
+.timeline-info { flex: 1; }
+.timeline-text { font-size: 12px; }
+.timeline-time { font-size: 11px; color: var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="profile-header">
+    <div class="profile-avatar">
+        {{ employee.initials }}
+        <div class="profile-dot" style="background:{{ employee.online_color }}"></div>
+    </div>
+    <div class="profile-info">
+        <div class="profile-name">
+            {{ employee.full_name or employee.username }}
+            {% if not employee.is_active %}<span style="color:#ff4d4f;font-size:13px;margin-left:8px">(Đã nghỉ việc)</span>{% endif %}
+        </div>
+        <div class="profile-meta">
+            {% if employee.employee_code %}<span><i class="fas fa-id-badge"></i>{{ employee.employee_code }}</span>{% endif %}
+            <span><i class="fas fa-envelope"></i>{{ employee.email }}</span>
+            {% if employee.phone %}<span><i class="fas fa-phone"></i>{{ employee.phone }}</span>{% endif %}
+            <span style="color:{{ employee.online_color }}"><i class="fas fa-circle" style="font-size:8px"></i> {{ employee.online_label }}</span>
+        </div>
+        <div class="profile-tags">
+            {% if employee.department %}<span class="profile-tag" style="background:#e6f7ff;color:#096dd9">{{ employee.department.name }}</span>{% endif %}
+            {% if employee.position %}<span class="profile-tag" style="background:#f6ffed;color:#389e0d">{{ employee.position.name }}</span>{% endif %}
+            {% if employee.role_obj %}<span class="profile-tag" style="background:#fff1f0;color:#cf1322">{{ employee.role_obj.name }}</span>{% endif %}
+        </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <a href="{{ url_for('employees.edit_employee', id=employee.id) }}" class="btn btn-default btn-sm"><i class="fas fa-edit"></i> Sửa</a>
+        {% if employee.id != current_user.id %}
+        <form method="POST" action="{{ url_for('employees.toggle_status', id=employee.id) }}" style="display:inline">
+            <button class="btn btn-sm {% if employee.is_active %}btn-default{% else %}btn-primary{% endif %}">
+                <i class="fas {% if employee.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                {% if employee.is_active %}Vô hiệu hóa{% else %}Kích hoạt{% endif %}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Content Grid -->
+<div class="profile-grid">
+    <!-- Personal Info -->
+    <div class="info-card">
+        <h4><i class="fas fa-user" style="color:var(--primary)"></i>Thông tin cá nhân</h4>
+        <div class="info-row"><div class="info-label">Họ tên</div><div class="info-value">{{ employee.full_name or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Username</div><div class="info-value">{{ employee.username }}</div></div>
+        <div class="info-row"><div class="info-label">Email</div><div class="info-value">{{ employee.email }}</div></div>
+        <div class="info-row"><div class="info-label">Điện thoại</div><div class="info-value">{{ employee.phone or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Giới tính</div><div class="info-value">{% if employee.gender == 'male' %}Nam{% elif employee.gender == 'female' %}Nữ{% elif employee.gender %}Khác{% else %}—{% endif %}</div></div>
+        <div class="info-row"><div class="info-label">Ngày sinh</div><div class="info-value">{{ employee.date_of_birth.strftime('%d/%m/%Y') if employee.date_of_birth else '—' }}</div></div>
+        <div class="info-row"><div class="info-label">CCCD/CMND</div><div class="info-value">{{ employee.id_card or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Địa chỉ</div><div class="info-value">{{ employee.address or '—' }}</div></div>
+    </div>
+
+    <!-- Work Info -->
+    <div class="info-card">
+        <h4><i class="fas fa-briefcase" style="color:#faad14"></i>Công việc</h4>
+        <div class="info-row"><div class="info-label">Mã nhân viên</div><div class="info-value">{{ employee.employee_code or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Phòng ban</div><div class="info-value">{{ employee.department.name if employee.department else '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Chức vụ</div><div class="info-value">{{ employee.position.name if employee.position else '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Vai trò</div><div class="info-value">{{ employee.role_obj.name if employee.role_obj else employee.role }}</div></div>
+        <div class="info-row"><div class="info-label">Ngày vào làm</div><div class="info-value">{{ employee.hire_date.strftime('%d/%m/%Y') if employee.hire_date else '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Ngày tạo TK</div><div class="info-value">{{ employee.created_at.strftime('%d/%m/%Y') if employee.created_at else '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Đăng nhập cuối</div><div class="info-value">{{ employee.last_login.strftime('%d/%m/%Y %H:%M') if employee.last_login else '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Trạng thái</div><div class="info-value">{% if employee.is_active %}<span style="color:#52c41a"><i class="fas fa-check-circle"></i> Đang hoạt động</span>{% else %}<span style="color:#ff4d4f"><i class="fas fa-times-circle"></i> Đã nghỉ</span>{% endif %}</div></div>
+    </div>
+
+    <!-- Emergency & Bank -->
+    <div class="info-card">
+        <h4><i class="fas fa-phone-alt" style="color:#ff4d4f"></i>Liên hệ khẩn cấp & Ngân hàng</h4>
+        <div class="info-row"><div class="info-label">Người liên hệ</div><div class="info-value">{{ employee.emergency_contact or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">SĐT khẩn cấp</div><div class="info-value">{{ employee.emergency_phone or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Số tài khoản</div><div class="info-value">{{ employee.bank_account or '—' }}</div></div>
+        <div class="info-row"><div class="info-label">Ngân hàng</div><div class="info-value">{{ employee.bank_name or '—' }}</div></div>
+        {% if employee.bio %}
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <div class="info-label" style="margin-bottom:6px">Giới thiệu</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--text-secondary)">{{ employee.bio }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="info-card">
+        <h4><i class="fas fa-history" style="color:#722ed1"></i>Hoạt động gần đây</h4>
+        <div class="activity-timeline">
+            {% for a in recent_activities %}
+            <div class="timeline-item">
+                <div class="timeline-icon" style="background:{{ a.action_color }}"><i class="fas {{ a.action_icon }}"></i></div>
+                <div class="timeline-info">
+                    <div class="timeline-text">{{ a.action_label }}: {{ a.description or a.module or '—' }}</div>
+                    <div class="timeline-time">{{ a.created_at.strftime('%d/%m %H:%M') }}</div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align:center;color:var(--text-secondary);padding:20px;font-size:13px">Chưa có hoạt động</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password -->
+{% if current_user.role == 'admin' %}
+<div class="info-card" style="margin-top:16px">
+    <h4><i class="fas fa-key" style="color:#faad14"></i>Đặt lại mật khẩu</h4>
+    <form method="POST" action="{{ url_for('employees.reset_password', id=employee.id) }}" style="display:flex;gap:8px;align-items:end">
+        <div class="form-group" style="margin:0;flex:1;max-width:300px">
+            <input type="password" name="new_password" class="form-control" placeholder="Mật khẩu mới (tối thiểu 4 ký tự)" minlength="4" required>
+        </div>
+        <button class="btn btn-default btn-sm"><i class="fas fa-key"></i> Đặt lại</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

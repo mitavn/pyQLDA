@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sửa phiếu ' + order.order_number if order else 'Tạo phiếu mới' }}{% endblock %}
+{% block page_title %}{{ 'Sửa phiếu ' + order.order_number if order else 'Tạo phiếu mới' }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_orders') }}">Phiếu nhập xuất</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{{ 'Sửa' if order else 'Tạo mới' }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.line-items-table { width: 100%; border-collapse: collapse; }
+.line-items-table th { padding: 10px 12px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+.line-items-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.line-items-table .form-control { padding: 6px 10px; font-size: 13px; }
+.line-items-table select.form-control { min-width: 200px; }
+.btn-remove-row { background: none; border: none; color: #ff4d4f; cursor: pointer; font-size: 16px; padding: 4px 8px; }
+.btn-remove-row:hover { color: #cf1322; }
+.order-type-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+.type-option { flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.type-option:hover { border-color: var(--primary); }
+.type-option.selected { border-color: var(--primary); background: var(--primary-light); }
+.type-option i { font-size: 20px; margin-bottom: 6px; display: block; }
+.type-option span { font-size: 13px; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="POST" id="orderForm">
+    <div class="card">
+        <div class="card-body">
+            <!-- Loại phiếu -->
+            <div class="form-group" style="margin-bottom:20px">
+                <label style="font-weight:600;margin-bottom:8px;display:block">Loại phiếu</label>
+                <div class="order-type-selector">
+                    {% for key, label in order_types %}
+                    <div class="type-option {% if order_type == key %}selected{% endif %}" onclick="selectType('{{ key }}', this)">
+                        <i class="fas {% if 'import' in key %}fa-arrow-down{% else %}fa-arrow-up{% endif %}"
+                           style="color:{% if key == 'planned_import' %}#1890ff{% elif key == 'planned_export' %}#faad14{% elif key == 'actual_import' %}#52c41a{% else %}#ff4d4f{% endif %}"></i>
+                        <span>{{ label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="type" id="orderType" value="{{ order_type }}">
+            </div>
+
+            <!-- Thông tin -->
+            <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+                <div class="form-group">
+                    <label>Đối tác (NCC / Khách hàng)</label>
+                    <input type="text" name="partner" class="form-control" value="{{ order.partner or '' if order else '' }}" placeholder="Tên nhà cung cấp hoặc khách hàng">
+                </div>
+                <div class="form-group">
+                    <label>Liên hệ</label>
+                    <input type="text" name="partner_contact" class="form-control" value="{{ order.partner_contact or '' if order else '' }}" placeholder="Người liên hệ, SĐT...">
+                </div>
+                <div class="form-group">
+                    <label>Ngày dự kiến</label>
+                    <input type="date" name="expected_date" class="form-control" value="{{ order.expected_date.strftime('%Y-%m-%d') if order and order.expected_date else '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Ghi chú</label>
+                <textarea name="note" class="form-control" rows="2" placeholder="Ghi chú...">{{ order.note or '' if order else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Line Items -->
+    <div class="card" style="margin-top:16px">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3><i class="fas fa-cube" style="color:var(--primary);margin-right:8px"></i>Sản phẩm</h3>
+            <button type="button" class="btn btn-primary btn-sm" onclick="addRow()"><i class="fas fa-plus"></i> Thêm dòng</button>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="line-items-table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th style="width:5%">#</th>
+                        <th style="width:35%">Sản phẩm</th>
+                        <th style="width:15%">Số lượng</th>
+                        <th style="width:15%">Đơn giá</th>
+                        <th style="width:15%">Thành tiền</th>
+                        <th style="width:10%">Ghi chú</th>
+                        <th style="width:5%"></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                    {% if order and order.items %}
+                    {% for item in order.items %}
+                    <tr data-idx="{{ loop.index0 }}">
+                        <td class="row-num">{{ loop.index }}</td>
+                        <td>
+                            <select name="items[{{ loop.index0 }}][product_id]" class="form-control" onchange="onProductSelect(this)">
+                                <option value="">-- Chọn sản phẩm --</option>
+                                {% for p in products %}
+                                <option value="{{ p.id }}" data-cost="{{ p.cost_price }}" data-price="{{ p.sell_price }}" data-stock="{{ p.stock_quantity }}" data-unit="{{ p.unit }}" {% if item.product_id == p.id %}selected{% endif %}>
+                                    {{ p.sku or '' }} — {{ p.name }} (Tồn: {{ p.stock_quantity|int }} {{ p.unit }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" name="items[{{ loop.index0 }}][quantity]" class="form-control" value="{{ item.quantity|int }}" min="0" step="1" oninput="calcRow(this)"></td>
+                        <td><input type="number" name="items[{{ loop.index0 }}][unit_cost]" class="form-control" value="{{ item.unit_cost|int }}" min="0" oninput="calcRow(this)"></td>
+                        <td class="row-total" style="font-weight:600">{{ (item.total or 0)|format_currency }}</td>
+                        <td><input type="text" name="items[{{ loop.index0 }}][note]" class="form-control" value="{{ item.note or '' }}" placeholder="..."></td>
+                        <td><button type="button" class="btn-remove-row" onclick="removeRow(this)"><i class="fas fa-times-circle"></i></button></td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" style="text-align:right;font-weight:700;padding:12px">Tổng cộng</td>
+                        <td id="grandTotal" style="font-weight:700;padding:12px;font-size:16px;color:var(--primary)">0</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <a href="{{ url_for('products.list_orders') }}" class="btn btn-default">Hủy</a>
+        <button type="submit" class="btn btn-primary" style="padding:10px 32px"><i class="fas fa-save"></i> {{ 'Cập nhật' if order else 'Tạo phiếu' }}</button>
+    </div>
+</form>
+
+<script>
+var rowIdx = {{ order.items|length if order and order.items else 0 }};
+var productsData = {{ products|map(attribute='id')|list|tojson }};
+
+function selectType(type, el) {
+    document.getElementById('orderType').value = type;
+    document.querySelectorAll('.type-option').forEach(function(d){ d.classList.remove('selected'); });
+    el.classList.add('selected');
+}
+
+function addRow() {
+    var tbody = document.getElementById('itemsBody');
+    var tr = document.createElement('tr');
+    tr.dataset.idx = rowIdx;
+    tr.innerHTML = `
+        <td class="row-num">${tbody.children.length + 1}</td>
+        <td>
+            <select name="items[${rowIdx}][product_id]" class="form-control" onchange="onProductSelect(this)">
+                <option value="">-- Chọn sản phẩm --</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" data-cost="{{ p.cost_price }}" data-price="{{ p.sell_price }}" data-stock="{{ p.stock_quantity }}" data-unit="{{ p.unit }}">
+                    {{ p.sku or '' }} — {{ p.name }} (Tồn: {{ p.stock_quantity|int }} {{ p.unit }})
+                </option>
+                {% endfor %}
+            </select>
+        </td>
+        <td><input type="number" name="items[${rowIdx}][quantity]" class="form-control" value="0" min="0" step="1" oninput="calcRow(this)"></td>
+        <td><input type="number" name="items[${rowIdx}][unit_cost]" class="form-control" value="0" min="0" oninput="calcRow(this)"></td>
+        <td class="row-total" style="font-weight:600">0</td>
+        <td><input type="text" name="items[${rowIdx}][note]" class="form-control" placeholder="..."></td>
+        <td><button type="button" class="btn-remove-row" onclick="removeRow(this)"><i class="fas fa-times-circle"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+    rowIdx++;
+}
+
+function removeRow(btn) {
+    btn.closest('tr').remove();
+    reindex();
+    calcGrand();
+}
+
+function reindex() {
+    var rows = document.querySelectorAll('#itemsBody tr');
+    rows.forEach(function(tr, i){ tr.querySelector('.row-num').textContent = i + 1; });
+}
+
+function onProductSelect(sel) {
+    var opt = sel.options[sel.selectedIndex];
+    if (opt.value) {
+        var tr = sel.closest('tr');
+        var costInput = tr.querySelector('[name$="[unit_cost]"]');
+        costInput.value = opt.dataset.cost || 0;
+        calcRow(costInput);
+    }
+}
+
+function calcRow(input) {
+    var tr = input.closest('tr');
+    var qty = parseFloat(tr.querySelector('[name$="[quantity]"]').value) || 0;
+    var cost = parseFloat(tr.querySelector('[name$="[unit_cost]"]').value) || 0;
+    tr.querySelector('.row-total').textContent = (qty * cost).toLocaleString('vi-VN');
+    calcGrand();
+}
+
+function calcGrand() {
+    var total = 0;
+    document.querySelectorAll('#itemsBody tr').forEach(function(tr){
+        var qty = parseFloat(tr.querySelector('[name$="[quantity]"]').value) || 0;
+        var cost = parseFloat(tr.querySelector('[name$="[unit_cost]"]').value) || 0;
+        total += qty * cost;
+    });
+    document.getElementById('grandTotal').textContent = total.toLocaleString('vi-VN');
+}
+
+// Init
+{% if not order %}addRow();{% endif %}
+calcGrand();
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Phiếu nhập xuất kho{% endblock %}
+{% block page_title %}Phiếu nhập xuất kho{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Phiếu nhập xuất</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.order-tabs { display: flex; gap: 0; margin-bottom: 16px; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.order-tab { flex: 1; padding: 12px 16px; text-align: center; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; border-right: 1px solid var(--border); transition: all 0.15s; }
+.order-tab:last-child { border-right: none; }
+.order-tab:hover { background: #fafafa; }
+.order-tab.active { background: var(--primary); color: #fff; }
+.order-tab .count { display: inline-block; background: rgba(255,255,255,0.2); padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; }
+.order-tab.active .count { background: rgba(255,255,255,0.3); }
+.order-tab:not(.active) .count { background: #f0f0f0; }
+.o-type-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #fff; }
+.o-status-badge { display: inline-flex; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Action bar -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div></div>
+    <div style="display:flex;gap:8px">
+        <a href="{{ url_for('products.create_order', type='planned_import') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nhập dự kiến</a>
+        <a href="{{ url_for('products.create_order', type='planned_export') }}" class="btn btn-default" style="border-color:#faad14;color:#faad14"><i class="fas fa-plus"></i> Xuất dự kiến</a>
+        <a href="{{ url_for('products.create_order', type='actual_import') }}" class="btn btn-default" style="border-color:#52c41a;color:#52c41a"><i class="fas fa-plus"></i> Nhập thực tế</a>
+        <a href="{{ url_for('products.create_order', type='actual_export') }}" class="btn btn-default" style="border-color:#ff4d4f;color:#ff4d4f"><i class="fas fa-plus"></i> Xuất thực tế</a>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="order-tabs">
+    <a href="{{ url_for('products.list_orders') }}" class="order-tab {% if not tab %}active{% endif %}">
+        Tất cả
+    </a>
+    {% for key, label in order_types %}
+    <a href="{{ url_for('products.list_orders', tab=key) }}" class="order-tab {% if tab == key %}active{% endif %}">
+        {{ label }} <span class="count">{{ stats.get(key, 0) }}</span>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Table -->
+<div class="card">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>MÃ PHIẾU</th>
+                <th>LOẠI</th>
+                <th>TRẠNG THÁI</th>
+                <th>ĐỐI TÁC</th>
+                <th>SỐ LƯỢNG</th>
+                <th>GIÁ TRỊ</th>
+                <th>NGÀY DỰ KIẾN</th>
+                <th>NGÀY TẠO</th>
+                <th>NGƯỜI TẠO</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for o in orders.items %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('products.order_detail', id=o.id) }}" class="text-link" style="font-weight:600;font-family:monospace">
+                        {{ o.order_number }}
+                    </a>
+                </td>
+                <td>
+                    <span class="o-type-badge" style="background:{{ o.type_color }}">
+                        <i class="fas {{ o.type_icon }}"></i> {{ o.type_label }}
+                    </span>
+                </td>
+                <td>
+                    <span class="o-status-badge" style="background:{{ o.status_color }}">{{ o.status_label }}</span>
+                </td>
+                <td>{{ o.partner or '-' }}</td>
+                <td style="font-weight:600">{{ o.total_quantity|int }}</td>
+                <td style="font-weight:600">{{ o.total_value|format_currency }}</td>
+                <td>{{ o.expected_date.strftime('%d/%m/%Y') if o.expected_date else '-' }}</td>
+                <td style="font-size:12px">{{ o.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td style="font-size:12px">{{ o.creator.full_name if o.creator else '-' }}</td>
+                <td class="action-btns">
+                    <a href="{{ url_for('products.order_detail', id=o.id) }}" class="btn-icon" title="Xem"><i class="fas fa-eye"></i></a>
+                    {% if o.status == 'draft' %}
+                    <a href="{{ url_for('products.edit_order', id=o.id) }}" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="text-center text-muted" style="padding:40px">Chưa có phiếu nào</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if orders.pages > 1 %}
+<div class="pagination">
+    {% if orders.has_prev %}<a href="?page={{ orders.prev_num }}&tab={{ tab }}" class="btn btn-default btn-sm">&laquo;</a>{% endif %}
+    <span class="pagination-info">{{ orders.page }}/{{ orders.pages }}</span>
+    {% if orders.has_next %}<a href="?page={{ orders.next_num }}&tab={{ tab }}" class="btn btn-default btn-sm">&raquo;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

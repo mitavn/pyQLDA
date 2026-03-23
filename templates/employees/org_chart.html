@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Sơ đồ tổ chức{% endblock %}
+{% block page_title %}Sơ đồ tổ chức{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('employees.list_employees') }}">Nhân viên</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Sơ đồ tổ chức</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.org-chart { display: flex; flex-direction: column; gap: 24px; }
+.org-dept { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.org-dept-header { padding: 16px 20px; background: linear-gradient(135deg, var(--primary), #4096ff); color: #fff; display: flex; align-items: center; justify-content: space-between; }
+.org-dept-name { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.org-dept-count { font-size: 12px; opacity: 0.9; }
+.org-manager { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #fafafa; border-bottom: 1px solid var(--border); }
+.org-manager .mgr-avatar { width: 36px; height: 36px; border-radius: 50%; background: #faad14; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.org-manager .mgr-info { font-size: 13px; }
+.org-manager .mgr-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; }
+.org-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1px; background: #f5f5f5; }
+.org-member { background: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 10px; transition: background 0.1s; }
+.org-member:hover { background: #fafafa; }
+.org-member .m-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; position: relative; flex-shrink: 0; }
+.org-member .m-dot { position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; }
+.org-member .m-info { min-width: 0; }
+.org-member .m-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.org-member .m-name a { color: var(--text-primary); text-decoration: none; }
+.org-member .m-name a:hover { color: var(--primary); }
+.org-member .m-pos { font-size: 11px; color: var(--text-secondary); }
+.no-dept { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.no-dept h4 { font-size: 14px; font-weight: 700; color: var(--text-secondary); margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:16px">
+    <div></div>
+    <div class="page-header-right">
+        <a href="{{ url_for('employees.list_employees') }}" class="btn btn-default"><i class="fas fa-list"></i> Danh sách</a>
+        <a href="{{ url_for('departments.list_departments') }}" class="btn btn-primary"><i class="fas fa-cog"></i> Quản lý PB</a>
+    </div>
+</div>
+
+<div class="org-chart">
+    {% for dept in departments %}
+    <div class="org-dept">
+        <div class="org-dept-header">
+            <div class="org-dept-name">
+                <i class="fas fa-building"></i>
+                {{ dept.name }}
+                {% if dept.parent %}<span style="font-size:11px;opacity:0.8">← {{ dept.parent.name }}</span>{% endif %}
+            </div>
+            <div class="org-dept-count">{{ dept.members|length }} nhân viên</div>
+        </div>
+        {% if dept.manager %}
+        <div class="org-manager">
+            <div class="mgr-avatar">{{ dept.manager.initials }}</div>
+            <div class="mgr-info">
+                <div class="mgr-label">Trưởng phòng</div>
+                <div style="font-weight:600">
+                    <a href="{{ url_for('employees.employee_detail', id=dept.manager.id) }}" style="color:var(--text-primary);text-decoration:none">{{ dept.manager.full_name or dept.manager.username }}</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if dept.members %}
+        <div class="org-members">
+            {% for m in dept.members %}
+            <div class="org-member">
+                <div class="m-avatar">{{ m.initials }}<div class="m-dot" style="background:{{ m.online_color }}"></div></div>
+                <div class="m-info">
+                    <div class="m-name"><a href="{{ url_for('employees.employee_detail', id=m.id) }}">{{ m.full_name or m.username }}</a></div>
+                    <div class="m-pos">{{ m.position.name if m.position else '—' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px">Chưa có nhân viên</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

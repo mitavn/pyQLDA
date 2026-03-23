@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Nhập xuất kho{% endblock %}
+{% block page_title %}Nhập xuất kho{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Nhập xuất kho</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.txn-type-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #fff; }
+.txn-positive { color: #52c41a; font-weight: 600; }
+.txn-negative { color: #ff4d4f; font-weight: 600; }
+.filter-tabs { display: flex; gap: 0; margin-bottom: 16px; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.filter-tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; border-right: 1px solid var(--border); transition: all 0.15s; }
+.filter-tab:last-child { border-right: none; }
+.filter-tab:hover { background: #fafafa; color: var(--text-primary); }
+.filter-tab.active { background: var(--primary); color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filter tabs -->
+<div class="filter-tabs">
+    <a href="{{ url_for('products.all_transactions') }}" class="filter-tab {% if not txn_type %}active{% endif %}">Tất cả</a>
+    {% for key, label in transaction_types %}
+    <a href="{{ url_for('products.all_transactions', type=key) }}" class="filter-tab {% if txn_type == key %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+<!-- Table -->
+<div class="card">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>NGÀY</th>
+                <th>SẢN PHẨM</th>
+                <th>LOẠI</th>
+                <th>SỐ LƯỢNG</th>
+                <th>ĐƠN GIÁ</th>
+                <th>GIÁ TRỊ</th>
+                <th>TỒN SAU</th>
+                <th>MÃ PHIẾU</th>
+                <th>ĐỐI TÁC</th>
+                <th>NGƯỜI TẠO</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions.items %}
+            <tr>
+                <td style="white-space:nowrap;font-size:12px">{{ t.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('products.stock_history', id=t.product_id) }}" class="text-link" style="font-weight:500">
+                        {{ t.product.name }}
+                    </a>
+                    <div style="font-size:11px;color:var(--text-secondary)">{{ t.product.sku or '' }}</div>
+                </td>
+                <td>
+                    <span class="txn-type-badge" style="background:{{ t.type_color }}">
+                        <i class="fas {{ t.type_icon }}"></i> {{ t.type_label }}
+                    </span>
+                </td>
+                <td class="{% if t.quantity >= 0 %}txn-positive{% else %}txn-negative{% endif %}">
+                    {{ '+' if t.quantity >= 0 else '' }}{{ t.quantity|int }}
+                </td>
+                <td>{{ t.unit_cost|format_currency }}</td>
+                <td style="font-weight:600">{{ t.total_value|format_currency }}</td>
+                <td style="font-weight:600">{{ t.stock_after|int }}</td>
+                <td><span style="font-family:monospace;font-size:12px">{{ t.reference or '-' }}</span></td>
+                <td>{{ t.partner or '-' }}</td>
+                <td style="font-size:12px">{{ t.creator.full_name if t.creator else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="text-center text-muted" style="padding:40px">Chưa có giao dịch nào</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if transactions.pages > 1 %}
+<div class="pagination">
+    {% if transactions.has_prev %}<a href="?page={{ transactions.prev_num }}&type={{ txn_type }}" class="btn btn-default btn-sm">&laquo;</a>{% endif %}
+    <span class="pagination-info">{{ transactions.page }}/{{ transactions.pages }}</span>
+    {% if transactions.has_next %}<a href="?page={{ transactions.next_num }}&type={{ txn_type }}" class="btn btn-default btn-sm">&raquo;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Cấu hình trường dữ liệu{% endblock %}
+{% block page_title %}Cấu hình trường dữ liệu{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/field_config.css') }}">{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header" style="justify-content: space-between;">
+        <div class="field-tabs">
+            {% for mod in modules %}
+            <a href="{{ url_for('settings.field_config', module=mod) }}"
+               class="field-tab {% if current_module == mod %}active{% endif %}">
+                {% if mod == 'contact' %}<i class="fas fa-users"></i> {{ module_labels[mod] }}
+                {% elif mod == 'company' %}<i class="fas fa-building"></i> {{ module_labels[mod] }}
+                {% elif mod == 'deal' %}<i class="fas fa-handshake"></i> {{ module_labels[mod] }}
+                {% elif mod == 'activity' %}<i class="fas fa-tasks"></i> {{ module_labels[mod] }}
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        <div class="field-header-actions">
+            <button class="btn btn-default btn-sm" onclick="resetModule()">
+                <i class="fas fa-undo"></i> Khôi phục module
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="resetAll()">
+                <i class="fas fa-refresh"></i> Khôi phục tất cả
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% for group_name, group_fields in grouped.items() %}
+        <div class="field-group">
+            <h4 class="field-group-title">{{ group_name }}</h4>
+            <div class="field-list" data-group="{{ group_name }}">
+                {% for field in group_fields %}
+                <div class="field-card" data-field-id="{{ field.id }}">
+                    <div class="field-drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                    <div class="field-info">
+                        <span class="field-label">{{ field.label }}</span>
+                        <span class="field-meta">{{ field.field_name }} · {{ field.field_type }}{% if field.is_required %} · <span class="text-danger">Bắt buộc</span>{% endif %}</span>
+                    </div>
+                    <div class="field-actions">
+                        <label class="toggle-switch">
+                            <input type="checkbox" {% if field.is_visible %}checked{% endif %}
+                                   onchange="toggleField({{ field.id }}, this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.field-list').forEach(list => {
+        new Sortable(list, {
+            handle: '.field-drag-handle',
+            animation: 200,
+            ghostClass: 'field-ghost',
+            onEnd: function() {
+                const fields = [];
+                list.querySelectorAll('.field-card').forEach((card, index) => {
+                    fields.push({id: parseInt(card.dataset.fieldId), sort_order: index});
+                });
+                fetch('/api/fields/reorder', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({module: '{{ current_module }}', fields: fields})
+                });
+            }
+        });
+    });
+});
+
+function toggleField(fieldId, visible) {
+    fetch(`/api/fields/${fieldId}/toggle`, {method: 'POST'})
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) alert('Lỗi cập nhật');
+    });
+}
+
+function resetModule() {
+    if (!confirm('Khôi phục tất cả trường Module "{{ module_labels[current_module] }}" về mặc định?\n\nCác thay đổi bạn đã làm (thứ tự, ẩn/hiện) sẽ bị mất.')) return;
+    fetch('/api/fields/reset', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({module: '{{ current_module }}'})
+    }).then(r => r.json()).then(data => {
+        if (data.success) location.reload();
+        else alert('Có lỗi xảy ra');
+    });
+}
+
+function resetAll() {
+    if (!confirm('Khôi phục TẤT CẢ trường dữ liệu (tất cả modules) về cài đặt gốc?\n\n⚠️ Hành động này không thể hoàn tác!')) return;
+    fetch('/api/fields/reset', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    }).then(r => r.json()).then(data => {
+        if (data.success) location.reload();
+        else alert('Có lỗi xảy ra');
+    });
+}
+</script>
+{% endblock %}

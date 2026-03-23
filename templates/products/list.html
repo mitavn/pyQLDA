@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Sản phẩm{% endblock %}
+{% block page_title %}Sản phẩm{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+    <div class="card" style="margin:0">
+        <div class="card-body" style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:8px;background:#e6f7ff;display:flex;align-items:center;justify-content:center"><i class="fas fa-boxes" style="color:#1890ff;font-size:16px"></i></div>
+            <div><div style="font-size:20px;font-weight:700">{{ total_count }}</div><div style="font-size:11px;color:var(--text-secondary)">Tổng sản phẩm</div></div>
+        </div>
+    </div>
+    <div class="card" style="margin:0">
+        <div class="card-body" style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:8px;background:#f6ffed;display:flex;align-items:center;justify-content:center"><i class="fas fa-check-circle" style="color:#52c41a;font-size:16px"></i></div>
+            <div><div style="font-size:20px;font-weight:700">{{ active_count }}</div><div style="font-size:11px;color:var(--text-secondary)">Đang bán</div></div>
+        </div>
+    </div>
+    <div class="card" style="margin:0">
+        <div class="card-body" style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:8px;background:#fff7e6;display:flex;align-items:center;justify-content:center"><i class="fas fa-exclamation-triangle" style="color:#faad14;font-size:16px"></i></div>
+            <div><div style="font-size:20px;font-weight:700">{{ low_stock }}</div><div style="font-size:11px;color:var(--text-secondary)">Sắp hết hàng</div></div>
+        </div>
+    </div>
+    <div class="card" style="margin:0">
+        <div class="card-body" style="padding:14px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:8px;background:#f9f0ff;display:flex;align-items:center;justify-content:center"><i class="fas fa-coins" style="color:#722ed1;font-size:16px"></i></div>
+            <div><div style="font-size:20px;font-weight:700">{{ total_value|format_currency }}</div><div style="font-size:11px;color:var(--text-secondary)">Giá trị kho</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="page-header">
+    <div class="page-header-left">
+        <form class="search-form" method="GET">
+            <div class="input-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" class="form-control" placeholder="Tìm sản phẩm, SKU..." value="{{ search }}">
+            </div>
+            <select name="category" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">Tất cả danh mục</option>
+                {% for c in categories %}
+                <option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+            <select name="stock" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">Tất cả kho</option>
+                <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Sắp hết</option>
+                <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Hết hàng</option>
+            </select>
+            <button type="submit" class="btn btn-default">Lọc</button>
+        </form>
+    </div>
+    <div class="page-header-right" style="display:flex;gap:8px">
+        <a href="{{ url_for('products.all_transactions') }}" class="btn btn-default"><i class="fas fa-exchange-alt"></i> Nhập xuất</a>
+        <a href="{{ url_for('products.import_excel') }}" class="btn btn-default"><i class="fas fa-file-excel"></i> Import</a>
+        <a href="{{ url_for('products.export_excel') }}" class="btn btn-default"><i class="fas fa-download"></i> Export</a>
+        <a href="{{ url_for('products.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm sản phẩm</a>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>TÊN SẢN PHẨM</th>
+                <th>DANH MỤC</th>
+                <th>GIÁ BÁN</th>
+                <th>GIÁ VỐN</th>
+                <th>TỒN KHO</th>
+                <th>TRẠNG THÁI</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in products.items %}
+            <tr>
+                <td style="color:var(--text-secondary);font-family:monospace;font-size:12px">{{ p.sku or '-' }}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div style="width:36px;height:36px;border-radius:6px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="fas {% if p.is_service %}fa-concierge-bell{% else %}fa-cube{% endif %}" style="color:var(--primary);font-size:14px"></i>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('products.edit', id=p.id) }}" class="text-link" style="font-weight:500">{{ p.name }}</a>
+                            {% if p.description %}<div style="font-size:11px;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.description }}</div>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge badge-default">{{ p.category }}</span></td>
+                <td><strong>{{ p.sell_price|format_currency }}</strong></td>
+                <td style="color:var(--text-secondary)">{{ p.cost_price|format_currency }}</td>
+                <td>
+                    {% if p.is_service %}
+                    <span style="color:var(--text-secondary)">—</span>
+                    {% else %}
+                    <strong>{{ p.stock_quantity|int }}</strong> {{ p.unit }}
+                    {% endif %}
+                </td>
+                <td><span class="badge {{ p.stock_badge_class }}">{{ p.stock_status_label }}</span></td>
+                <td class="action-btns">
+                    {% if not p.is_service %}
+                    <a href="{{ url_for('products.stock_history', id=p.id) }}" class="btn-icon" title="Lịch sử kho"><i class="fas fa-exchange-alt"></i></a>
+                    {% endif %}
+                    <a href="{{ url_for('products.edit', id=p.id) }}" class="btn-icon" title="Sửa"><i class="fas fa-edit"></i></a>
+                    <form method="POST" action="{{ url_for('products.delete', id=p.id) }}" style="display:inline" onsubmit="return confirm('Xóa sản phẩm này?')">
+                        <button class="btn-icon text-danger" title="Xóa"><i class="fas fa-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted" style="padding:40px">Chưa có sản phẩm nào. <a href="{{ url_for('products.create') }}">Thêm ngay</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if products.pages > 1 %}
+<div class="pagination">
+    {% if products.has_prev %}
+    <a href="?page={{ products.prev_num }}&search={{ search }}&category={{ category }}&stock={{ stock_filter }}" class="btn btn-default btn-sm">&laquo;</a>
+    {% endif %}
+    <span class="pagination-info">{{ products.page }}/{{ products.pages }} ({{ products.total }})</span>
+    {% if products.has_next %}
+    <a href="?page={{ products.next_num }}&search={{ search }}&category={{ category }}&stock={{ stock_filter }}" class="btn btn-default btn-sm">&raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stock Adjustment Modal -->
+<div id="stockModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+        <h3 style="margin-bottom:16px"><i class="fas fa-warehouse" style="color:var(--primary)"></i> Điều chỉnh kho</h3>
+        <p style="margin-bottom:4px;font-size:13px;color:var(--text-secondary)">Sản phẩm: <strong id="stockProductName"></strong></p>
+        <p style="margin-bottom:16px;font-size:13px;color:var(--text-secondary)">Tồn kho hiện tại: <strong id="stockCurrent"></strong></p>
+        <form id="stockForm" method="POST">
+            <div class="form-group">
+                <label>Số lượng điều chỉnh <small>(+ nhập, - xuất)</small></label>
+                <input type="number" name="adjustment" class="form-control" required step="1" placeholder="VD: +10 hoặc -5">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+                <button type="submit" class="btn btn-primary">Xác nhận</button>
+                <button type="button" class="btn btn-default" onclick="closeStockModal()">Hủy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openStockModal(id, name, qty, unit) {
+    document.getElementById('stockProductName').textContent = name;
+    document.getElementById('stockCurrent').textContent = qty + ' ' + unit;
+    document.getElementById('stockForm').action = '/products/' + id + '/stock';
+    var modal = document.getElementById('stockModal');
+    modal.style.display = 'flex';
+}
+function closeStockModal() {
+    document.getElementById('stockModal').style.display = 'none';
+}
+document.getElementById('stockModal').addEventListener('click', function(e) {
+    if (e.target === this) closeStockModal();
+});
+</script>
+{% endblock %}

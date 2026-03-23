@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Log hoạt động{% endblock %}
+{% block page_title %}Log hoạt động nhân viên{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">Log hoạt động</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.log-filters { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.log-filters .form-control { padding: 6px 10px; font-size: 13px; }
+.log-filters select { min-width: 140px; }
+.log-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.log-item:hover { background: #fafafa; }
+.log-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; flex-shrink: 0; }
+.log-info { flex: 1; }
+.log-user { font-weight: 600; font-size: 13px; }
+.log-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.log-time { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+.log-module { display: inline-flex; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; background: #f0f0f0; color: #595959; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<form class="log-filters" method="GET">
+    <select name="user" class="form-control">
+        <option value="">Tất cả nhân viên</option>
+        {% for u in users %}
+        <option value="{{ u.id }}" {% if filter_user|string == u.id|string %}selected{% endif %}>{{ u.full_name or u.username }}</option>
+        {% endfor %}
+    </select>
+    <select name="action" class="form-control">
+        <option value="">Tất cả hành động</option>
+        {% for key, label in action_types %}
+        <option value="{{ key }}" {% if filter_action == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <input type="date" name="from" class="form-control" value="{{ filter_from }}" placeholder="Từ ngày">
+    <input type="date" name="to" class="form-control" value="{{ filter_to }}" placeholder="Đến ngày">
+    <button class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Lọc</button>
+    <a href="{{ url_for('team.activity_log') }}" class="btn btn-default btn-sm">Xóa lọc</a>
+</form>
+
+<div class="card">
+    {% for a in activities.items %}
+    <div class="log-item">
+        <div class="log-icon" style="background:{{ a.action_color }}"><i class="fas {{ a.action_icon }}"></i></div>
+        <div class="log-info">
+            <div class="log-user">{{ a.user.full_name or a.user.username }}
+                <span class="log-module">{{ a.module or '-' }}</span>
+            </div>
+            <div class="log-desc">{{ a.action_label }}: {{ a.description or '-' }}</div>
+        </div>
+        <div class="log-time">
+            {{ a.created_at.strftime('%d/%m %H:%M') }}
+            <div style="font-size:10px">{{ a.ip_address or '' }}</div>
+        </div>
+    </div>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text-secondary)">Chưa có hoạt động nào</div>
+    {% endfor %}
+</div>
+
+{% if activities.pages > 1 %}
+<div class="pagination" style="margin-top:12px">
+    {% if activities.has_prev %}<a href="?page={{ activities.prev_num }}&user={{ filter_user }}&action={{ filter_action }}&from={{ filter_from }}&to={{ filter_to }}" class="btn btn-default btn-sm">&laquo;</a>{% endif %}
+    <span class="pagination-info">{{ activities.page }}/{{ activities.pages }}</span>
+    {% if activities.has_next %}<a href="?page={{ activities.next_num }}&user={{ filter_user }}&action={{ filter_action }}&from={{ filter_from }}&to={{ filter_to }}" class="btn btn-default btn-sm">&raquo;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

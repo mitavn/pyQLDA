@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Hoạt động{% endblock %}
+{% block page_title %}Hoạt động{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <form class="search-form" method="GET">
+            <div class="input-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" value="{{ search }}" placeholder="Tìm kiếm..." class="form-control">
+            </div>
+            <select name="type" class="form-control form-control-sm">
+                <option value="">Tất cả loại</option>
+                {% for val, label in activity_types %}<option value="{{ val }}" {% if activity_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <select name="status" class="form-control form-control-sm">
+                <option value="">Tất cả trạng thái</option>
+                <option value="planned" {% if status == 'planned' %}selected{% endif %}>Lên kế hoạch</option>
+                <option value="completed" {% if status == 'completed' %}selected{% endif %}>Hoàn thành</option>
+                <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Hủy</option>
+            </select>
+            <button type="submit" class="btn btn-default btn-sm">Lọc</button>
+        </form>
+    </div>
+    <div class="page-header-right">
+        <a href="{{ url_for('activities.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo hoạt động</a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body" style="padding:0">
+        <table class="table table-hover">
+            <thead><tr><th style="width:40px"></th><th>Tiêu đề</th><th>Loại</th><th>Trạng thái</th><th>Ưu tiên</th><th>Liên hệ</th><th>Ngày tạo</th><th style="width:80px"></th></tr></thead>
+            <tbody>
+                {% for act in activities.items %}
+                <tr>
+                    <td>{{ act.type_icon }}</td>
+                    <td><strong>{{ act.title }}</strong></td>
+                    <td>{% for val, label in activity_types %}{% if val == act.type %}{{ label }}{% endif %}{% endfor %}</td>
+                    <td>
+                        <span class="badge {% if act.status == 'completed' %}badge-green{% elif act.status == 'cancelled' %}badge-red{% else %}badge-blue{% endif %}">
+                            {% if act.status == 'completed' %}Hoàn thành{% elif act.status == 'cancelled' %}Hủy{% else %}Lên KH{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if act.priority == 'urgent' %}badge-red{% elif act.priority == 'high' %}badge-orange{% else %}badge-default{% endif %}">
+                            {% if act.priority == 'urgent' %}Khẩn{% elif act.priority == 'high' %}Cao{% elif act.priority == 'low' %}Thấp{% else %}Bình thường{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ act.contact.full_name if act.contact else '-' }}</td>
+                    <td>{{ act.created_at|format_date }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ url_for('activities.edit', id=act.id) }}" class="btn-icon"><i class="fas fa-edit"></i></a>
+                            <form method="POST" action="{{ url_for('activities.delete', id=act.id) }}" style="display:inline" onsubmit="return confirm('Xác nhận xóa?')">
+                                <button type="submit" class="btn-icon text-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-muted" style="padding:40px">Chưa có hoạt động nào</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if activities.pages > 1 %}
+<div class="pagination">
+    {% if activities.has_prev %}<a href="?page={{ activities.prev_num }}" class="btn btn-default btn-sm">← Trước</a>{% endif %}
+    <span class="pagination-info">Trang {{ activities.page }} / {{ activities.pages }}</span>
+    {% if activities.has_next %}<a href="?page={{ activities.next_num }}" class="btn btn-default btn-sm">Sau →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

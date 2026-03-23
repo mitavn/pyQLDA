@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử kho — {{ product.name }}{% endblock %}
+{% block page_title %}{{ product.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('dashboard.index') }}"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <a href="{{ url_for('products.list_products') }}">Sản phẩm</a>
+    <i class="fas fa-chevron-right breadcrumb-sep"></i>
+    <span class="breadcrumb-current">{{ product.name }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stock-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stock-summary-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+.stock-summary-card .val { font-size: 24px; font-weight: 700; }
+.stock-summary-card .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.txn-type-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #fff; }
+.txn-positive { color: #52c41a; font-weight: 600; }
+.txn-negative { color: #ff4d4f; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Product Info Bar -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:48px;height:48px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center">
+            <i class="fas {% if product.is_service %}fa-concierge-bell{% else %}fa-cube{% endif %}" style="color:var(--primary);font-size:20px"></i>
+        </div>
+        <div>
+            <div style="font-size:18px;font-weight:700">{{ product.name }}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">{{ product.sku or '-' }} · {{ product.category }} · {{ product.unit }}</div>
+        </div>
+    </div>
+    <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="document.getElementById('stockModal').style.display='flex'">
+            <i class="fas fa-plus-circle"></i> Tạo phiếu
+        </button>
+        <a href="{{ url_for('products.edit', id=product.id) }}" class="btn btn-default"><i class="fas fa-edit"></i> Sửa</a>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="stock-summary">
+    <div class="stock-summary-card">
+        <div class="val" style="color:var(--primary)">{{ product.stock_quantity|int }}</div>
+        <div class="lbl">Tồn kho ({{ product.unit }})</div>
+    </div>
+    <div class="stock-summary-card">
+        <div class="val" style="color:#52c41a">{{ product.sell_price|format_currency }}</div>
+        <div class="lbl">Giá bán</div>
+    </div>
+    <div class="stock-summary-card">
+        <div class="val" style="color:var(--text-secondary)">{{ product.cost_price|format_currency }}</div>
+        <div class="lbl">Giá vốn</div>
+    </div>
+    <div class="stock-summary-card">
+        <div class="val" style="color:#722ed1">{{ product.stock_value|format_currency }}</div>
+        <div class="lbl">Giá trị tồn kho</div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-exchange-alt" style="color:var(--primary);margin-right:8px"></i>Lịch sử nhập xuất</h3>
+    </div>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>NGÀY</th>
+                <th>LOẠI</th>
+                <th>SỐ LƯỢNG</th>
+                <th>ĐƠN GIÁ</th>
+                <th>GIÁ TRỊ</th>
+                <th>TỒN TRƯỚC</th>
+                <th>TỒN SAU</th>
+                <th>MÃ PHIẾU</th>
+                <th>ĐỐI TÁC</th>
+                <th>GHI CHÚ</th>
+                <th>NGƯỜI TẠO</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions.items %}
+            <tr>
+                <td style="white-space:nowrap;font-size:12px">{{ t.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    <span class="txn-type-badge" style="background:{{ t.type_color }}">
+                        <i class="fas {{ t.type_icon }}"></i> {{ t.type_label }}
+                    </span>
+                </td>
+                <td class="{% if t.quantity >= 0 %}txn-positive{% else %}txn-negative{% endif %}">
+                    {{ '+' if t.quantity >= 0 else '' }}{{ t.quantity|int }} {{ product.unit }}
+                </td>
+                <td>{{ t.unit_cost|format_currency }}</td>
+                <td style="font-weight:600">{{ t.total_value|format_currency }}</td>
+                <td style="color:var(--text-secondary)">{{ t.stock_before|int }}</td>
+                <td style="font-weight:600">{{ t.stock_after|int }}</td>
+                <td><span style="font-family:monospace;font-size:12px">{{ t.reference or '-' }}</span></td>
+                <td>{{ t.partner or '-' }}</td>
+                <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.note or '-' }}</td>
+                <td style="font-size:12px">{{ t.creator.full_name if t.creator else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="11" class="text-center text-muted" style="padding:40px">Chưa có giao dịch nào</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if transactions.pages > 1 %}
+<div class="pagination">
+    {% if transactions.has_prev %}<a href="?page={{ transactions.prev_num }}" class="btn btn-default btn-sm">&laquo;</a>{% endif %}
+    <span class="pagination-info">{{ transactions.page }}/{{ transactions.pages }}</span>
+    {% if transactions.has_next %}<a href="?page={{ transactions.next_num }}" class="btn btn-default btn-sm">&raquo;</a>{% endif %}
+</div>
+{% endif %}
+
+<!-- Stock Transaction Modal -->
+<div id="stockModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;padding:28px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+        <h3 style="margin-bottom:20px;display:flex;align-items:center;gap:8px">
+            <i class="fas fa-warehouse" style="color:var(--primary)"></i> Tạo phiếu nhập/xuất kho
+        </h3>
+        <form method="POST" action="{{ url_for('products.adjust_stock', id=product.id) }}">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr">
+                <div class="form-group">
+                    <label>Loại giao dịch <span class="required">*</span></label>
+                    <select name="type" class="form-control" id="txnType" onchange="updateQtyLabel()">
+                        {% for key, label in transaction_types %}
+                        <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="qtyLabel">Số lượng <span class="required">*</span></label>
+                    <input type="number" name="quantity" class="form-control" required step="1" min="0" placeholder="VD: 100">
+                </div>
+                <div class="form-group">
+                    <label>Đơn giá</label>
+                    <input type="number" name="unit_cost" class="form-control" step="0.01" value="{{ product.cost_price }}" placeholder="Đơn giá">
+                </div>
+                <div class="form-group">
+                    <label>Mã phiếu</label>
+                    <input type="text" name="reference" class="form-control" placeholder="VD: NK-001">
+                </div>
+                <div class="form-group" style="grid-column:span 2">
+                    <label>Đối tác (NCC / Khách hàng)</label>
+                    <input type="text" name="partner" class="form-control" placeholder="Tên nhà cung cấp hoặc khách hàng">
+                </div>
+                <div class="form-group" style="grid-column:span 2">
+                    <label>Ghi chú</label>
+                    <textarea name="note" class="form-control" rows="2" placeholder="Ghi chú..."></textarea>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Xác nhận</button>
+                <button type="button" class="btn btn-default" onclick="document.getElementById('stockModal').style.display='none'">Hủy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateQtyLabel() {
+    var type = document.getElementById('txnType').value;
+    var label = document.getElementById('qtyLabel');
+    if (type === 'export' || type === 'damage') {
+        label.innerHTML = 'Số lượng xuất <span class="required">*</span>';
+    } else {
+        label.innerHTML = 'Số lượng nhập <span class="required">*</span>';
+    }
+}
+document.getElementById('stockModal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
+</script>
+{% endblock %}
