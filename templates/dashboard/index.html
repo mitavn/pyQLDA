@@ -22,8 +22,6 @@
 .kpi-icon-green { background: #f0faf0; color: #52c41a; }
 .kpi-icon-orange { background: #fff7e6; color: #fa8c16; }
 .kpi-icon-purple { background: #f9f0ff; color: #722ed1; }
-.kpi-icon-cyan { background: #e6fffb; color: #13c2c2; }
-.kpi-icon-red { background: #fff1f0; color: #ff4d4f; }
 .kpi-text { display: flex; flex-direction: column; }
 .kpi-label { font-size: 11px; color: #8c8c8c; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 .kpi-value { font-size: 24px; font-weight: 700; color: #262626; line-height: 1.1; }
@@ -32,9 +30,8 @@
 .kpi-badge-up { background: #f0faf0; color: #52c41a; }
 .kpi-badge-down { background: #fff1f0; color: #ff4d4f; }
 
-/* Main Layout */
+/* Layout */
 .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.dash-row-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
 .dash-card {
     background: #fff; border-radius: 12px; padding: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #f0f0f0;
@@ -44,18 +41,45 @@
     margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f5f5f5;
 }
 .dash-card-title { font-size: 14px; font-weight: 600; color: #262626; display: flex; align-items: center; gap: 8px; }
-.dash-card-title i { font-size: 14px; }
+
+/* Gauge */
+.gauge-container { display: flex; flex-direction: column; align-items: center; }
+.gauge-wrap { position: relative; width: 220px; height: 130px; margin-bottom: 12px; }
+.gauge-percent { font-size: 28px; font-weight: 700; color: #262626; text-align: center; }
+.gauge-bottom {
+    display: flex; justify-content: space-between; width: 100%; padding: 12px 0 0;
+    border-top: 1px solid #f0f0f0; margin-top: 12px;
+}
+.gauge-stat { text-align: center; flex: 1; }
+.gauge-stat-label { font-size: 12px; color: #8c8c8c; display: block; margin-bottom: 2px; }
+.gauge-stat-value { font-size: 16px; font-weight: 700; color: #262626; }
+
+/* Tabs */
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid #f0f0f0; margin-bottom: 14px; }
+.tab-btn {
+    padding: 8px 16px; font-size: 13px; font-weight: 600; color: #8c8c8c;
+    background: none; border: none; cursor: pointer; position: relative;
+    transition: color 0.2s;
+}
+.tab-btn:hover { color: #262626; }
+.tab-btn.active { color: #1890ff; }
+.tab-btn.active::after {
+    content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+    height: 2px; background: #1890ff; border-radius: 2px 2px 0 0;
+}
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
 
 /* Live Feed */
 .live-indicator { width: 8px; height: 8px; border-radius: 50%; background: #52c41a; display: inline-block; animation: livePulse 2s infinite; }
-@keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 .feed-item {
     display: flex; align-items: flex-start; gap: 10px; padding: 10px 0;
-    border-bottom: 1px solid #fafafa; font-size: 13px; transition: background 0.3s;
+    border-bottom: 1px solid #fafafa; font-size: 13px;
 }
 .feed-item:last-child { border-bottom: none; }
 .feed-item.new-item { animation: feedSlideIn 0.5s ease; }
-@keyframes feedSlideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes feedSlideIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
 .feed-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .feed-body { flex: 1; min-width: 0; }
 .feed-user { font-weight: 600; color: #262626; }
@@ -64,27 +88,20 @@
 .feed-value { font-size: 12px; font-weight: 600; color: #262626; white-space: nowrap; }
 
 /* Employee Board */
-.emp-item {
-    display: flex; align-items: center; gap: 10px; padding: 8px 0;
-    border-bottom: 1px solid #fafafa;
-}
+.emp-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #fafafa; }
 .emp-item:last-child { border-bottom: none; }
 .emp-avatar {
     width: 34px; height: 34px; border-radius: 50%; background: #e8f4fd;
     display: flex; align-items: center; justify-content: center;
     font-weight: 600; font-size: 13px; color: #1890ff; position: relative; flex-shrink: 0;
 }
-.emp-status-dot {
-    width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff;
-    position: absolute; bottom: -1px; right: -1px;
-}
+.emp-status-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; position: absolute; bottom: -1px; right: -1px; }
 .emp-status-online { background: #52c41a; }
 .emp-status-offline { background: #d9d9d9; }
-.emp-info { flex: 1; min-width: 0; }
 .emp-name { font-size: 13px; font-weight: 600; color: #262626; }
 .emp-module { font-size: 11px; color: #8c8c8c; }
 
-/* Performance Table */
+/* Performance */
 .perf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .perf-table th { text-align: left; padding: 8px 6px; color: #8c8c8c; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f0f0f0; }
 .perf-table td { padding: 10px 6px; border-bottom: 1px solid #fafafa; }
@@ -98,8 +115,7 @@
 /* Alerts */
 .alert-item {
     display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-    border-radius: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer;
-    transition: transform 0.2s;
+    border-radius: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer; transition: transform 0.2s;
 }
 .alert-item:hover { transform: translateX(4px); }
 .alert-high { background: #fff1f0; border-left: 3px solid #ff4d4f; }
@@ -108,18 +124,14 @@
 .alert-icon { font-size: 18px; flex-shrink: 0; }
 .alert-text { flex: 1; color: #262626; }
 
-/* Chart */
 .chart-wrap { height: 240px; }
-.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-
-/* Scroll containers */
 .scroll-list { max-height: 380px; overflow-y: auto; }
 .scroll-list::-webkit-scrollbar { width: 4px; }
 .scroll-list::-webkit-scrollbar-thumb { background: #e8e8e8; border-radius: 2px; }
 
 @media (max-width: 900px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .dash-row, .dash-row-3 { grid-template-columns: 1fr; }
+    .dash-row { grid-template-columns: 1fr; }
 }
 </style>
 {% endblock %}
@@ -161,76 +173,93 @@
     </div>
 </div>
 
-<!-- ══════ LIVE FEED + EMPLOYEE STATUS ══════ -->
+<!-- ══════ ROW: GAUGE + TABBED FEED/EMPLOYEES ══════ -->
 <div class="dash-row">
-    <!-- Live Activity Feed -->
+    <!-- Revenue Gauge Meter -->
     <div class="dash-card">
         <div class="dash-card-header">
-            <div class="dash-card-title">
-                <span class="live-indicator"></span> Hoạt động trực tiếp
-            </div>
-            <span style="font-size:11px;color:#bfbfbf" id="feedTimer">Tự cập nhật mỗi 30s</span>
+            <div class="dash-card-title"><i class="fas fa-gauge-high" style="color:#fa8c16"></i> Doanh thu năm</div>
         </div>
-        <div class="scroll-list" id="liveFeed">
-            {% for item in live_feed %}
-            <div class="feed-item">
-                <div class="feed-icon" style="background:{{ item.color }}15;color:{{ item.color }}">{{ item.icon }}</div>
-                <div class="feed-body">
-                    <span class="feed-user">{{ item.user }}</span>
-                    <span class="feed-action">{{ item.action|safe }}</span>
-                    <div class="feed-meta">{{ item.time_str }}</div>
-                </div>
-                {% if item.value %}
-                <div class="feed-value">{{ "{:,.0f}".format(item.value) }}₫</div>
-                {% endif %}
+        <div class="gauge-container">
+            <div class="gauge-wrap">
+                <canvas id="gaugeChart" width="220" height="130"></canvas>
             </div>
-            {% else %}
-            <p class="text-muted text-center" style="padding:30px">Chưa có hoạt động</p>
-            {% endfor %}
+            <div class="gauge-percent" id="gaugePercent">0%</div>
+            <div class="gauge-bottom">
+                <div class="gauge-stat">
+                    <span class="gauge-stat-label">Pipeline (kỳ vọng)</span>
+                    <span class="gauge-stat-value" id="gaugePipeline">{{ stats.pipeline_value|format_currency }}</span>
+                </div>
+                <div class="gauge-stat">
+                    <span class="gauge-stat-label">Đã thực hiện</span>
+                    <span class="gauge-stat-value" id="gaugeRealized">{{ stats.total_revenue|format_currency }}</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Employee Status Board -->
+    <!-- Tabbed: Hoạt động / Nhân viên online -->
     <div class="dash-card">
-        <div class="dash-card-header">
-            <div class="dash-card-title">
-                <i class="fas fa-users" style="color:#1890ff"></i> Nhân viên
-                <span class="kpi-badge kpi-badge-up" id="onlineCount">
-                    {{ employees|selectattr('is_online')|list|length }} online
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="tabFeed">
+                <span class="live-indicator"></span> Hoạt động
+                <span style="font-size:11px;color:#bfbfbf;margin-left:4px" id="feedTimer">30s</span>
+            </button>
+            <button class="tab-btn" data-tab="tabEmployees">
+                <i class="fas fa-users" style="font-size:12px"></i> Nhân viên
+                <span class="kpi-badge kpi-badge-up" id="onlineCount" style="margin-left:4px">
+                    {{ employees|selectattr('is_online')|list|length }}
                 </span>
+            </button>
+        </div>
+
+        <!-- Tab: Live Feed -->
+        <div class="tab-pane active" id="tabFeed">
+            <div class="scroll-list" id="liveFeed">
+                {% for item in live_feed %}
+                <div class="feed-item">
+                    <div class="feed-icon" style="background:{{ item.color }}15;color:{{ item.color }}">{{ item.icon }}</div>
+                    <div class="feed-body">
+                        <span class="feed-user">{{ item.user }}</span>
+                        <span class="feed-action">{{ item.action|safe }}</span>
+                        <div class="feed-meta">{{ item.time_str }}</div>
+                    </div>
+                    {% if item.value %}<div class="feed-value">{{ "{:,.0f}".format(item.value) }}₫</div>{% endif %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center" style="padding:30px">Chưa có hoạt động</p>
+                {% endfor %}
             </div>
         </div>
-        <div class="scroll-list" id="empBoard">
-            {% for emp in employees %}
-            <div class="emp-item">
-                <div class="emp-avatar" style="{% if emp.is_online %}border:2px solid #52c41a{% endif %}">
-                    {{ emp.full_name[:2]|upper }}
-                    <div class="emp-status-dot {% if emp.is_online %}emp-status-online{% else %}emp-status-offline{% endif %}"></div>
-                </div>
-                <div class="emp-info">
-                    <div class="emp-name">{{ emp.full_name }}</div>
-                    <div class="emp-module">
-                        {% if emp.is_online %}
-                        {{ emp.current_module }}
-                        {% else %}
-                        <span style="color:#d9d9d9">Offline{% if emp.last_seen %} · {{ emp.last_seen }}{% endif %}</span>
-                        {% endif %}
+
+        <!-- Tab: Employees -->
+        <div class="tab-pane" id="tabEmployees">
+            <div class="scroll-list" id="empBoard">
+                {% for emp in employees %}
+                <div class="emp-item">
+                    <div class="emp-avatar" style="{% if emp.is_online %}border:2px solid #52c41a{% endif %}">
+                        {{ emp.full_name[:2]|upper }}
+                        <div class="emp-status-dot {% if emp.is_online %}emp-status-online{% else %}emp-status-offline{% endif %}"></div>
                     </div>
+                    <div style="flex:1;min-width:0">
+                        <div class="emp-name">{{ emp.full_name }}</div>
+                        <div class="emp-module">
+                            {% if emp.is_online %}{{ emp.current_module }}{% else %}
+                            <span style="color:#d9d9d9">Offline</span>{% endif %}
+                        </div>
+                    </div>
+                    {% if emp.is_online %}<span class="kpi-badge kpi-badge-up" style="font-size:9px">LIVE</span>{% endif %}
                 </div>
-                {% if emp.is_online %}
-                <span class="kpi-badge kpi-badge-up" style="font-size:9px">LIVE</span>
-                {% endif %}
+                {% else %}
+                <p class="text-muted text-center" style="padding:20px">Chưa có nhân viên</p>
+                {% endfor %}
             </div>
-            {% else %}
-            <p class="text-muted text-center" style="padding:20px">Chưa có nhân viên</p>
-            {% endfor %}
         </div>
     </div>
 </div>
 
-<!-- ══════ PERFORMANCE + ALERTS ══════ -->
+<!-- ══════ ROW: PERFORMANCE + ALERTS ══════ -->
 <div class="dash-row">
-    <!-- Employee Performance -->
     <div class="dash-card">
         <div class="dash-card-header">
             <div class="dash-card-title"><i class="fas fa-ranking-star" style="color:#fa8c16"></i> Hiệu suất nhân viên (30 ngày)</div>
@@ -239,35 +268,27 @@
             <table class="perf-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Nhân viên</th>
-                        <th style="text-align:center">Win</th>
-                        <th style="text-align:center">Loss</th>
-                        <th style="text-align:center">Tỷ lệ</th>
-                        <th style="text-align:right">Doanh số</th>
-                        <th style="text-align:center">HĐ</th>
-                        <th style="text-align:center">KH mới</th>
+                        <th>#</th><th>Nhân viên</th>
+                        <th style="text-align:center">Win</th><th style="text-align:center">Loss</th>
+                        <th style="text-align:center">Tỷ lệ</th><th style="text-align:right">Doanh số</th>
+                        <th style="text-align:center">HĐ</th><th style="text-align:center">KH mới</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in performance %}
                     <tr>
-                        <td>
-                            <div class="perf-rank {% if loop.index == 1 %}perf-rank-1{% elif loop.index == 2 %}perf-rank-2{% elif loop.index == 3 %}perf-rank-3{% endif %}">
-                                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div style="display:flex;align-items:center;gap:8px">
-                                <div class="emp-avatar" style="width:28px;height:28px;font-size:11px">{{ p.full_name[:2]|upper }}</div>
-                                <span style="font-weight:600">{{ p.full_name }}</span>
-                            </div>
-                        </td>
-                        <td style="text-align:center"><span style="color:#52c41a;font-weight:600">{{ p.deals_won }}</span></td>
-                        <td style="text-align:center"><span style="color:#ff4d4f">{{ p.deals_lost }}</span></td>
+                        <td><div class="perf-rank {% if loop.index<=3 %}perf-rank-{{ loop.index }}{% endif %}">
+                            {% if loop.index==1 %}🥇{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                        </div></td>
+                        <td><div style="display:flex;align-items:center;gap:8px">
+                            <div class="emp-avatar" style="width:28px;height:28px;font-size:11px">{{ p.full_name[:2]|upper }}</div>
+                            <span style="font-weight:600">{{ p.full_name }}</span>
+                        </div></td>
+                        <td style="text-align:center;color:#52c41a;font-weight:600">{{ p.deals_won }}</td>
+                        <td style="text-align:center;color:#ff4d4f">{{ p.deals_lost }}</td>
                         <td style="text-align:center">
                             <div class="perf-bar" style="width:60px;margin:0 auto">
-                                <div class="perf-bar-fill" style="width:{{ p.win_rate }}%;background:{% if p.win_rate >= 60 %}#52c41a{% elif p.win_rate >= 30 %}#fa8c16{% else %}#ff4d4f{% endif %}"></div>
+                                <div class="perf-bar-fill" style="width:{{ p.win_rate }}%;background:{% if p.win_rate>=60 %}#52c41a{% elif p.win_rate>=30 %}#fa8c16{% else %}#ff4d4f{% endif %}"></div>
                             </div>
                             <span style="font-size:11px;color:#8c8c8c">{{ p.win_rate }}%</span>
                         </td>
@@ -283,11 +304,9 @@
         </div>
     </div>
 
-    <!-- Alerts & Issues -->
     <div class="dash-card">
         <div class="dash-card-header">
-            <div class="dash-card-title">
-                <i class="fas fa-triangle-exclamation" style="color:#fa8c16"></i> Cảnh báo
+            <div class="dash-card-title"><i class="fas fa-triangle-exclamation" style="color:#fa8c16"></i> Cảnh báo
                 {% if alerts %}<span class="kpi-badge kpi-badge-down">{{ alerts|length }}</span>{% endif %}
             </div>
         </div>
@@ -308,16 +327,14 @@
     </div>
 </div>
 
-<!-- ══════ CHART + PIPELINE ══════ -->
+<!-- ══════ ROW: REVENUE CHART + PIPELINE ══════ -->
 <div class="dash-row">
     <div class="dash-card">
-        <div class="chart-header">
+        <div class="dash-card-header">
             <div class="dash-card-title"><i class="fas fa-chart-area" style="color:#1890ff"></i> Doanh thu theo tháng</div>
             <a href="{{ url_for('deals.pipeline') }}" style="font-size:12px;color:#1890ff;text-decoration:none"><i class="fas fa-eye"></i> Pipeline</a>
         </div>
-        <div class="chart-wrap">
-            <canvas id="revenueChart"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
     </div>
     <div class="dash-card">
         <div class="dash-card-header">
@@ -347,20 +364,100 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ===== Revenue Chart =====
-    const monthlyData = {{ monthly_revenue|tojson }};
-    const months = monthlyData.map(r => r.month);
-    const wonData = monthlyData.map(r => r.revenue);
+    const totalRevenue = {{ stats.total_revenue }};
+    const pipelineValue = {{ stats.pipeline_value }};
 
+    // ===== TAB SWITCHING =====
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+            // Deactivate all
+            this.closest('.dash-card').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.closest('.dash-card').querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            // Activate target
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // ===== GAUGE CHART =====
+    const gaugeCanvas = document.getElementById('gaugeChart');
+    if (gaugeCanvas) {
+        const gCtx = gaugeCanvas.getContext('2d');
+        const gW = 220, gH = 130;
+        const cx = gW / 2, cy = gH - 10;
+        const radius = 90;
+
+        const target = pipelineValue + totalRevenue || 1;
+        const pct = Math.min((totalRevenue / target) * 100, 100);
+        document.getElementById('gaugePercent').textContent = pct.toFixed(1) + '%';
+
+        function drawArc(startAngle, endAngle, color, lineWidth) {
+            gCtx.beginPath();
+            gCtx.arc(cx, cy, radius, startAngle, endAngle, false);
+            gCtx.strokeStyle = color;
+            gCtx.lineWidth = lineWidth;
+            gCtx.lineCap = 'round';
+            gCtx.stroke();
+        }
+
+        // Ticks
+        for (let i = 0; i <= 50; i++) {
+            const angle = Math.PI + (Math.PI * i / 50);
+            const inner = radius - 12;
+            const outer = radius - (i % 5 === 0 ? 2 : 6);
+            gCtx.beginPath();
+            gCtx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+            gCtx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+            gCtx.strokeStyle = i % 5 === 0 ? '#bfbfbf' : '#e8e8e8';
+            gCtx.lineWidth = i % 5 === 0 ? 1.5 : 1;
+            gCtx.stroke();
+        }
+
+        drawArc(Math.PI, 2 * Math.PI, '#f0f0f0', 8);
+
+        const gradient = gCtx.createLinearGradient(cx - radius, cy, cx + radius, cy);
+        gradient.addColorStop(0, '#ff4d4f');
+        gradient.addColorStop(0.5, '#faad14');
+        gradient.addColorStop(1, '#52c41a');
+        drawArc(Math.PI, Math.PI + (Math.PI * pct / 100), gradient, 8);
+
+        // Needle
+        const needleAngle = Math.PI + (Math.PI * pct / 100);
+        gCtx.beginPath();
+        gCtx.moveTo(cx, cy);
+        gCtx.lineTo(cx + Math.cos(needleAngle) * (radius - 20), cy + Math.sin(needleAngle) * (radius - 20));
+        gCtx.strokeStyle = '#595959';
+        gCtx.lineWidth = 2;
+        gCtx.lineCap = 'round';
+        gCtx.stroke();
+
+        gCtx.beginPath();
+        gCtx.arc(cx, cy, 5, 0, 2 * Math.PI);
+        gCtx.fillStyle = '#595959';
+        gCtx.fill();
+
+        // Labels
+        [0, 20, 40, 60, 80, 100].forEach(val => {
+            const angle = Math.PI + (Math.PI * val / 100);
+            gCtx.font = '10px Inter, sans-serif';
+            gCtx.fillStyle = '#8c8c8c';
+            gCtx.textAlign = 'center';
+            gCtx.fillText(val, cx + Math.cos(angle) * (radius + 14), cy + Math.sin(angle) * (radius + 14) + 4);
+        });
+    }
+
+    // ===== REVENUE BAR CHART =====
+    const monthlyData = {{ monthly_revenue|tojson }};
     const chartCtx = document.getElementById('revenueChart');
     if (chartCtx) {
         new Chart(chartCtx, {
             type: 'bar',
             data: {
-                labels: months,
+                labels: monthlyData.map(r => r.month),
                 datasets: [{
                     label: 'Doanh thu',
-                    data: wonData,
+                    data: monthlyData.map(r => r.revenue),
                     backgroundColor: 'rgba(24,144,255,0.7)',
                     borderColor: '#1890ff',
                     borderWidth: 1,
@@ -369,19 +466,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: '#fff', titleColor: '#262626', bodyColor: '#595959',
                         borderColor: '#f0f0f0', borderWidth: 1, padding: 12, cornerRadius: 8,
-                        callbacks: {
-                            label: function(ctx) {
-                                return ctx.parsed.y.toLocaleString('vi-VN') + '₫';
-                            }
-                        }
+                        callbacks: { label: ctx => ctx.parsed.y.toLocaleString('vi-VN') + '₫' }
                     }
                 },
                 scales: {
@@ -391,12 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         grid: { color: '#f5f5f5', drawBorder: false },
                         ticks: {
                             color: '#bfbfbf', font: { size: 11 },
-                            callback: function(val) {
-                                if (val >= 1e9) return (val/1e9).toFixed(1) + 'B';
-                                if (val >= 1e6) return (val/1e6).toFixed(0) + 'M';
-                                if (val >= 1e3) return (val/1e3).toFixed(0) + 'K';
-                                return val;
-                            }
+                            callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v
                         }
                     }
                 }
@@ -407,14 +493,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== AUTO-REFRESH =====
     let refreshTimer = 30;
     const timerEl = document.getElementById('feedTimer');
-
     function updateTimer() {
         refreshTimer--;
-        if (timerEl) timerEl.textContent = 'Cập nhật sau ' + refreshTimer + 's';
-        if (refreshTimer <= 0) {
-            refreshTimer = 30;
-            fetchLiveData();
-        }
+        if (timerEl) timerEl.textContent = refreshTimer + 's';
+        if (refreshTimer <= 0) { refreshTimer = 30; fetchLiveData(); }
     }
     setInterval(updateTimer, 1000);
 
@@ -426,8 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateFeed(data.feed);
                 updateEmployees(data.employees);
                 updateAlerts(data.alerts);
-            })
-            .catch(() => {});
+            }).catch(() => {});
     }
 
     function updateKPIs(s) {
@@ -440,67 +521,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateFeed(feed) {
-        const container = document.getElementById('liveFeed');
-        if (!container || !feed.length) return;
-        let html = '';
-        feed.forEach(item => {
-            const val = item.value ? Number(item.value).toLocaleString('vi-VN') + '₫' : '';
-            html += `<div class="feed-item new-item">
-                <div class="feed-icon" style="background:${item.color}15;color:${item.color}">${item.icon}</div>
-                <div class="feed-body">
-                    <span class="feed-user">${item.user}</span>
-                    <span class="feed-action">${item.action}</span>
-                    <div class="feed-meta">${item.time_str}</div>
-                </div>
-                ${val ? `<div class="feed-value">${val}</div>` : ''}
-            </div>`;
+        const c = document.getElementById('liveFeed');
+        if (!c || !feed.length) return;
+        let h = '';
+        feed.forEach(i => {
+            const v = i.value ? Number(i.value).toLocaleString('vi-VN') + '₫' : '';
+            h += `<div class="feed-item new-item">
+                <div class="feed-icon" style="background:${i.color}15;color:${i.color}">${i.icon}</div>
+                <div class="feed-body"><span class="feed-user">${i.user}</span> <span class="feed-action">${i.action}</span><div class="feed-meta">${i.time_str}</div></div>
+                ${v ? `<div class="feed-value">${v}</div>` : ''}</div>`;
         });
-        container.innerHTML = html;
+        c.innerHTML = h;
     }
 
     function updateEmployees(emps) {
-        const container = document.getElementById('empBoard');
-        const countEl = document.getElementById('onlineCount');
-        if (!container) return;
-        const onlineCount = emps.filter(e => e.is_online).length;
-        if (countEl) countEl.textContent = onlineCount + ' online';
-        let html = '';
-        emps.forEach(emp => {
-            const initials = emp.full_name.substring(0, 2).toUpperCase();
-            const borderStyle = emp.is_online ? 'border:2px solid #52c41a' : '';
-            const dotClass = emp.is_online ? 'emp-status-online' : 'emp-status-offline';
-            const moduleText = emp.is_online ? emp.current_module :
-                `<span style="color:#d9d9d9">Offline</span>`;
-            const badge = emp.is_online ? '<span class="kpi-badge kpi-badge-up" style="font-size:9px">LIVE</span>' : '';
-            html += `<div class="emp-item">
-                <div class="emp-avatar" style="${borderStyle}">${initials}<div class="emp-status-dot ${dotClass}"></div></div>
-                <div class="emp-info">
-                    <div class="emp-name">${emp.full_name}</div>
-                    <div class="emp-module">${moduleText}</div>
-                </div>
-                ${badge}
-            </div>`;
+        const c = document.getElementById('empBoard');
+        const cnt = document.getElementById('onlineCount');
+        if (!c) return;
+        const on = emps.filter(e => e.is_online).length;
+        if (cnt) cnt.textContent = on;
+        let h = '';
+        emps.forEach(e => {
+            const ini = e.full_name.substring(0,2).toUpperCase();
+            const dot = e.is_online ? 'emp-status-online' : 'emp-status-offline';
+            const mod = e.is_online ? e.current_module : '<span style="color:#d9d9d9">Offline</span>';
+            const badge = e.is_online ? '<span class="kpi-badge kpi-badge-up" style="font-size:9px">LIVE</span>' : '';
+            h += `<div class="emp-item"><div class="emp-avatar" style="${e.is_online?'border:2px solid #52c41a':''}">${ini}<div class="emp-status-dot ${dot}"></div></div><div style="flex:1;min-width:0"><div class="emp-name">${e.full_name}</div><div class="emp-module">${mod}</div></div>${badge}</div>`;
         });
-        container.innerHTML = html || '<p class="text-muted text-center" style="padding:20px">Chưa có nhân viên</p>';
+        c.innerHTML = h || '<p class="text-muted text-center" style="padding:20px">Chưa có nhân viên</p>';
     }
 
     function updateAlerts(alerts) {
-        const container = document.getElementById('alertsList');
-        if (!container) return;
-        if (!alerts.length) {
-            container.innerHTML = '<div style="text-align:center;padding:30px;color:#52c41a"><i class="fas fa-check-circle" style="font-size:32px;margin-bottom:8px;display:block"></i><span style="font-size:13px">Không có cảnh báo — mọi thứ đang tốt!</span></div>';
-            return;
-        }
-        let html = '';
+        const c = document.getElementById('alertsList');
+        if (!c) return;
+        if (!alerts.length) { c.innerHTML = '<div style="text-align:center;padding:30px;color:#52c41a"><i class="fas fa-check-circle" style="font-size:32px;margin-bottom:8px;display:block"></i><span style="font-size:13px">Không có cảnh báo</span></div>'; return; }
+        let h = '';
         alerts.forEach(a => {
-            const val = a.value ? Number(a.value).toLocaleString('vi-VN') + '₫' : '';
-            html += `<a href="${a.link}" class="alert-item alert-${a.severity}" style="text-decoration:none">
-                <span class="alert-icon">${a.icon}</span>
-                <span class="alert-text">${a.message}</span>
-                ${val ? `<span class="feed-value">${val}</span>` : ''}
-            </a>`;
+            const v = a.value ? Number(a.value).toLocaleString('vi-VN') + '₫' : '';
+            h += `<a href="${a.link}" class="alert-item alert-${a.severity}" style="text-decoration:none"><span class="alert-icon">${a.icon}</span><span class="alert-text">${a.message}</span>${v?`<span class="feed-value">${v}</span>`:''}</a>`;
         });
-        container.innerHTML = html;
+        c.innerHTML = h;
     }
 });
 </script>
