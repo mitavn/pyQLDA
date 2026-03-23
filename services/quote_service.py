@@ -99,13 +99,71 @@ class QuoteService(BaseDataProvider):
 
     # ── Status transition ───────────────────────────────────────
     def update_status(self, tenant_id, quote_id, new_status):
-        """Change quote status if valid."""
+        """Change quote status if valid. Sync linked deal automatically."""
         if new_status not in QUOTE_STATUSES:
             return None
         quote = self.get_one(tenant_id, quote_id)
+        old_status = quote.status
         quote.status = new_status
+
+        # ── Sync linked Deal ──
+        sync_msg = None
+        if quote.deal_id and old_status != new_status:
+            sync_msg = self._sync_deal_from_quote(quote, new_status)
+
         db.session.commit()
-        return quote
+        return quote, sync_msg
+
+    def _sync_deal_from_quote(self, quote, new_status):
+        """Update linked deal based on quote status change."""
+        from models.deal import Deal
+        from datetime import datetime as dt
+
+        deal = Deal.query.get(quote.deal_id)
+        if not deal:
+            return None
+
+        STAGE_ORDER = ['Tiếp cận', 'Đánh giá', 'Đề xuất', 'Thương lượng', 'Đóng thắng', 'Đóng thua']
+
+        if new_status == 'sent':
+            # Move deal to Đề xuất if it's in an earlier stage
+            current_idx = STAGE_ORDER.index(deal.stage) if deal.stage in STAGE_ORDER else 0
+            target_idx = STAGE_ORDER.index('Đề xuất')
+            if current_idx < target_idx:
+                deal.stage = 'Đề xuất'
+                deal.status = 'open'
+                return f'Deal "{deal.name}" → Đề xuất'
+
+        elif new_status == 'accepted':
+            # Move deal to Đóng thắng, sync value from quote
+            deal.stage = 'Đóng thắng'
+            deal.status = 'won'
+            deal.actual_close_date = dt.utcnow().date()
+            # Sync value from quote grand_total (preserve if quote has 0)
+            if quote.grand_total and quote.grand_total > 0:
+                deal.value = quote.grand_total
+                deal.total_amount = quote.grand_total
+            elif deal.value:
+                # Preserve existing deal value
+                deal.total_amount = deal.value
+            return f'Deal "{deal.name}" → Đóng thắng ({deal.value:,.0f} {deal.currency})'
+
+        elif new_status == 'rejected':
+            # Move deal to Đóng thua, KEEP value (don't reset)
+            deal.stage = 'Đóng thua'
+            deal.status = 'lost'
+            deal.actual_close_date = dt.utcnow().date()
+            return f'Deal "{deal.name}" → Đóng thua (giá trị giữ nguyên)'
+
+        elif new_status == 'draft':
+            # Revert deal to open if it was closed via this quote
+            if deal.status in ('won', 'lost'):
+                deal.stage = 'Thương lượng'
+                deal.status = 'open'
+                deal.actual_close_date = None
+                return f'Deal "{deal.name}" → Thương lượng (mở lại)'
+
+        return None
 
     # ── Form options ────────────────────────────────────────────
     def get_form_options(self, tenant_id):

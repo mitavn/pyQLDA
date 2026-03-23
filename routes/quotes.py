@@ -90,9 +90,12 @@ def delete(id):
 def update_status(id):
     """Change quote status (draft→sent→accepted/rejected)."""
     new_status = request.form.get('status', '')
-    quote = service.update_status(current_user.tenant_id, id, new_status)
-    if quote:
+    result = service.update_status(current_user.tenant_id, id, new_status)
+    if result:
+        quote, sync_msg = result
         flash(f'Trạng thái đã chuyển sang: {quote.status_label}', 'success')
+        if sync_msg:
+            flash(f'🔗 {sync_msg}', 'info')
     return redirect(url_for('quotes.detail', id=id))
 
 

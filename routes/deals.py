@@ -67,6 +67,7 @@ def detail(id):
     deal = service.get_one(tenant_id, id)
     field_configs = get_visible_fields(tenant_id, 'deal')
     related = service.get_related(tenant_id, id)
+    deal_quotes = service.get_quotes_for_deal(tenant_id, id)
 
     return render_template('deals/detail.html', deal=deal,
                            field_configs=field_configs,
@@ -74,6 +75,7 @@ def detail(id):
                            notes=related['notes'],
                            contacts=related['contacts'],
                            companies=related['companies'],
+                           deal_quotes=deal_quotes,
                            stages=DEAL_STAGES)
 
 

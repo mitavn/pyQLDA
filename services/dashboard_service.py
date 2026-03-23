@@ -19,14 +19,21 @@ def get_dashboard_stats(tenant_id):
     won_deals = Deal.query.filter_by(tenant_id=tenant_id, status='won').count()
     lost_deals = Deal.query.filter_by(tenant_id=tenant_id, status='lost').count()
 
-    # Revenue
-    total_revenue = db.session.query(func.sum(Deal.value)).filter_by(
-        tenant_id=tenant_id, status='won'
-    ).scalar() or 0
+    # Revenue: use total_amount if set, fallback to value
+    # total_amount is set when deal is won (from quote or stage move)
+    won_deal_list = Deal.query.filter_by(tenant_id=tenant_id, status='won').all()
+    total_revenue = sum((d.total_amount or d.value or 0) for d in won_deal_list)
 
     pipeline_value = db.session.query(func.sum(Deal.value)).filter_by(
         tenant_id=tenant_id, status='open'
     ).scalar() or 0
+
+    # Win rate
+    closed_deals = won_deals + lost_deals
+    win_rate = round(won_deals / closed_deals * 100, 1) if closed_deals > 0 else 0
+
+    # Average deal value (won deals)
+    avg_deal_value = round(total_revenue / won_deals, 0) if won_deals > 0 else 0
 
     return {
         'total_contacts': total_contacts,
@@ -38,6 +45,8 @@ def get_dashboard_stats(tenant_id):
         'lost_deals': lost_deals,
         'total_revenue': total_revenue,
         'pipeline_value': pipeline_value,
+        'win_rate': win_rate,
+        'avg_deal_value': avg_deal_value,
     }
 
 
@@ -69,7 +78,8 @@ def get_top_deals(tenant_id, limit=5):
 
 
 def get_monthly_revenue(tenant_id, months=6):
-    """Doanh thu theo tháng (6 tháng gần nhất)."""
+    """Doanh thu theo tháng (6 tháng gần nhất).
+    Uses total_amount (set on won) with fallback to value."""
     result = []
     now = datetime.utcnow()
     for i in range(months - 1, -1, -1):
@@ -79,12 +89,14 @@ def get_monthly_revenue(tenant_id, months=6):
         else:
             month_end = month_start.replace(month=month_start.month + 1, day=1)
 
-        revenue = db.session.query(func.sum(Deal.value)).filter(
+        won_deals = Deal.query.filter(
             Deal.tenant_id == tenant_id,
             Deal.status == 'won',
             Deal.actual_close_date >= month_start,
             Deal.actual_close_date < month_end
-        ).scalar() or 0
+        ).all()
+
+        revenue = sum((d.total_amount or d.value or 0) for d in won_deals)
 
         result.append({
             'month': month_start.strftime('%m/%Y'),

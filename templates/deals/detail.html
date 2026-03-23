@@ -74,6 +74,37 @@
             <div class="qi-item"><i class="fas fa-building"></i> <a href="{{ url_for('companies.detail', id=deal.company.id) }}">{{ deal.company.name }}</a></div>
             {% endif %}
         </div>
+
+        <!-- Báo giá liên quan -->
+        <div class="sidebar-card">
+            <h4 style="display:flex;justify-content:space-between;align-items:center">
+                <span><i class="fas fa-file-invoice" style="color:var(--primary);margin-right:6px"></i>Báo giá</span>
+                <a href="{{ url_for('quotes.create') }}?deal_id={{ deal.id }}" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 10px">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </h4>
+            {% if deal_quotes %}
+            {% for q in deal_quotes %}
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+                <div style="flex:1;min-width:0">
+                    <a href="{{ url_for('quotes.detail', id=q.id) }}" style="font-weight:600;font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        {{ q.title }}
+                    </a>
+                    <span style="font-size:11px;color:var(--text-secondary)">{{ q.quote_number or '' }} · {{ q.created_at|format_date }}</span>
+                </div>
+                <div style="text-align:right">
+                    <span style="font-size:12px;font-weight:700;display:block">{{ q.grand_total|format_currency }}</span>
+                    <span class="badge {% if q.status == 'accepted' %}badge-green{% elif q.status == 'rejected' %}badge-red{% elif q.status == 'sent' %}badge-blue{% else %}badge-default{% endif %}" style="font-size:10px">
+                        {{ q.status_label }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-muted" style="font-size:13px">Chưa có báo giá liên kết</p>
+            {% endif %}
+        </div>
+
         <div class="sidebar-card">
             <h4>Hoạt động</h4>
             {% for act in activities[:5] %}

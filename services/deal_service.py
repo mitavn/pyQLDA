@@ -53,7 +53,8 @@ class DealService(BaseDataProvider):
 
     # ── Stage move (drag-drop) ──────────────────────────────────
     def move_stage(self, tenant_id, deal_id, new_stage):
-        """Move a deal to a new stage. Returns (success, deal_or_None)."""
+        """Move a deal to a new stage. Returns (success, deal_or_None).
+        IMPORTANT: value is NEVER reset during stage moves."""
         if new_stage not in DEAL_STAGES:
             return False, None
 
@@ -61,11 +62,28 @@ class DealService(BaseDataProvider):
         deal.stage = new_stage
         deal.status = self._status_from_stage(new_stage)
 
-        if new_stage in ('Đóng thắng', 'Đóng thua'):
+        if new_stage == 'Đóng thắng':
             deal.actual_close_date = datetime.utcnow().date()
+            # Set total_amount = value (preserve revenue for stats)
+            if deal.value:
+                deal.total_amount = deal.value
+        elif new_stage == 'Đóng thua':
+            deal.actual_close_date = datetime.utcnow().date()
+        else:
+            # Re-opening: clear close date
+            if deal.actual_close_date and new_stage not in ('Đóng thắng', 'Đóng thua'):
+                deal.actual_close_date = None
 
         db.session.commit()
         return True, deal
+
+    # ── Sync from quote ─────────────────────────────────────────
+    def get_quotes_for_deal(self, tenant_id, deal_id):
+        """Get all quotes linked to a deal."""
+        from models.quote import Quote
+        return Quote.query.filter_by(
+            tenant_id=tenant_id, deal_id=deal_id
+        ).order_by(Quote.created_at.desc()).all()
 
     # ── Related data ────────────────────────────────────────────
     def get_related(self, tenant_id, record_id):
