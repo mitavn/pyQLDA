@@ -535,6 +535,27 @@
     }
     </script>
 
+    <!-- Heartbeat — employee presence tracking -->
+    <script>
+    (function(){
+        function getModule() {
+            var p = location.pathname;
+            if (p === '/') return 'dashboard';
+            var m = p.split('/')[1];
+            return m || 'dashboard';
+        }
+        function sendHeartbeat() {
+            fetch('/api/heartbeat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({page: location.pathname, module: getModule()})
+            }).catch(function(){});
+        }
+        sendHeartbeat();
+        setInterval(sendHeartbeat, 30000);
+    })();
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
