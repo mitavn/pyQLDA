@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from services.quote_service import QuoteService, QUOTE_STATUSES
 from models.product import PRODUCT_UNITS
+from services.log_service import log_action
 
 quotes_bp = Blueprint('quotes', __name__, url_prefix='/quotes')
 service = QuoteService()
@@ -32,6 +33,7 @@ def create():
 
     if request.method == 'POST':
         quote = service.create_with_items(tenant_id, request.form, current_user.id)
+        log_action('create', 'quotes', quote.id, quote.title, value=quote.grand_total)
         flash('Đã tạo báo giá mới!', 'success')
         return redirect(url_for('quotes.detail', id=quote.id))
 
@@ -59,6 +61,7 @@ def edit(id):
 
     if request.method == 'POST':
         quote = service.update_with_items(tenant_id, id, request.form)
+        log_action('edit', 'quotes', id, quote.title, value=quote.grand_total)
 
         # Auto-save via AJAX — return JSON
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or not request.accept_mimetypes.accept_html:
@@ -80,6 +83,8 @@ def edit(id):
 @quotes_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    quote = service.get_one(current_user.tenant_id, id)
+    log_action('delete', 'quotes', id, quote.title)
     service.delete(current_user.tenant_id, id)
     flash('Đã xóa báo giá.', 'success')
     return redirect(url_for('quotes.list_quotes'))
@@ -93,6 +98,7 @@ def update_status(id):
     result = service.update_status(current_user.tenant_id, id, new_status)
     if result:
         quote, sync_msg = result
+        log_action('status', 'quotes', id, quote.title, details=quote.status_label, value=quote.grand_total)
         flash(f'Trạng thái đã chuyển sang: {quote.status_label}', 'success')
         if sync_msg:
             flash(f'🔗 {sync_msg}', 'info')

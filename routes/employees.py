@@ -4,6 +4,7 @@ from models.user import db, User
 from models.department import Department, Position
 from services.permission_service import get_roles
 from routes.team import log_activity
+from services.log_service import log_action
 from datetime import datetime
 
 employees_bp = Blueprint('employees', __name__, url_prefix='/employees')
@@ -121,6 +122,7 @@ def create_employee():
         db.session.commit()
 
         log_activity('create', 'employees', f'Tạo nhân viên {full_name}', 'User', emp.id)
+        log_action('create', 'employees', emp.id, full_name)
         flash(f'Đã tạo nhân viên {full_name}.', 'success')
         return redirect(url_for('employees.employee_detail', id=emp.id))
 
@@ -176,6 +178,7 @@ def edit_employee(id):
 
         db.session.commit()
         log_activity('update', 'employees', f'Cập nhật NV {emp.full_name}', 'User', emp.id)
+        log_action('edit', 'employees', emp.id, emp.full_name)
         flash('Đã cập nhật thông tin nhân viên.', 'success')
         return redirect(url_for('employees.employee_detail', id=emp.id))
 
@@ -197,6 +200,7 @@ def toggle_status(id):
         db.session.commit()
         status_text = 'kích hoạt' if emp.is_active else 'vô hiệu hóa'
         log_activity('update', 'employees', f'{status_text} NV {emp.full_name}', 'User', emp.id)
+        log_action('status', 'employees', emp.id, emp.full_name, details=status_text)
         flash(f'Đã {status_text} nhân viên {emp.full_name or emp.username}.', 'success')
     return redirect(url_for('employees.list_employees'))
 
@@ -209,6 +213,7 @@ def delete_employee(id):
         flash('Không thể xóa chính mình.', 'error')
     else:
         log_activity('delete', 'employees', f'Xóa NV {emp.full_name}', 'User', emp.id)
+        log_action('delete', 'employees', emp.id, emp.full_name)
         db.session.delete(emp)
         db.session.commit()
         flash(f'Đã xóa nhân viên {emp.full_name or emp.username}.', 'success')

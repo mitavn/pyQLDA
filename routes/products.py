@@ -5,6 +5,7 @@ from models.product import (PRODUCT_CATEGORIES, PRODUCT_UNITS, TRANSACTION_TYPES
                              ORDER_TYPES, ORDER_STATUSES, COUNT_STATUSES)
 from services.product_service import ProductService
 from services.base_data_provider import ValidationError
+from services.log_service import log_action
 from datetime import datetime
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
@@ -50,6 +51,7 @@ def create():
     if request.method == 'POST':
         try:
             product = service.create_product(current_user.tenant_id, request.form, current_user.id)
+            log_action('create', 'products', product.id, product.name)
             flash('Đã thêm sản phẩm mới!', 'success')
             return redirect(url_for('products.list_products'))
         except ValidationError as e:
@@ -67,6 +69,7 @@ def edit(id):
     if request.method == 'POST':
         try:
             service.update_product(current_user.tenant_id, id, request.form)
+            log_action('edit', 'products', id, product.name)
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'status': 'ok', 'message': 'Đã lưu'})
@@ -86,6 +89,8 @@ def edit(id):
 @products_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    product = service.get_one(current_user.tenant_id, id)
+    log_action('delete', 'products', id, product.name)
     service.delete(current_user.tenant_id, id)
     flash('Đã xóa sản phẩm.', 'success')
     return redirect(url_for('products.list_products'))
@@ -152,6 +157,7 @@ def create_order():
 
     if request.method == 'POST':
         order = service.create_order(current_user.tenant_id, request.form, current_user.id)
+        log_action('create', 'orders', order.id, order.order_number)
         flash(f'Đã tạo phiếu {order.order_number}!', 'success')
         return redirect(url_for('products.order_detail', id=order.id))
 
@@ -179,6 +185,7 @@ def edit_order(id):
 
     if request.method == 'POST':
         service.update_order(current_user.tenant_id, id, request.form)
+        log_action('edit', 'orders', id, order.order_number)
         flash('Đã cập nhật phiếu!', 'success')
         return redirect(url_for('products.order_detail', id=order.id))
 
@@ -195,6 +202,7 @@ def complete_order(id):
     if error:
         flash(error, 'error')
     else:
+        log_action('status', 'orders', id, order.order_number, details='Hoàn thành')
         flash(f'Phiếu {order.order_number} đã hoàn thành! Tồn kho đã cập nhật.', 'success')
     return redirect(url_for('products.order_detail', id=id))
 
@@ -237,6 +245,7 @@ def list_counts():
 def create_count():
     if request.method == 'POST':
         count = service.create_count(current_user.tenant_id, request.form, current_user.id)
+        log_action('count', 'inventory', count.id, count.count_number)
         flash(f'Phiếu kiểm kho {count.count_number} — {count.total_products} sản phẩm', 'success')
         return redirect(url_for('products.count_detail', id=count.id))
 

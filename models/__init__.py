@@ -3,6 +3,7 @@ from .contact import Contact
 from .company import Company
 from .deal import Deal
 from .activity import Activity
+from .activity_log import ActivityLog
 from .field_config import FieldConfig
 from .note import Note
 from .department import Department, Position

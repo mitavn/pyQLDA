@@ -4,6 +4,7 @@ from services.contact_service import ContactService
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
 from services.base_data_provider import ValidationError
+from services.log_service import log_action
 
 contacts_bp = Blueprint('contacts', __name__, url_prefix='/contacts')
 service = ContactService()
@@ -44,6 +45,7 @@ def create():
         data = parse_form_data(request.form, field_configs)
         try:
             contact = service.create(tenant_id, data, current_user.id)
+            log_action('create', 'contacts', contact.id, contact.full_name)
             flash('Đã tạo liên hệ mới thành công!', 'success')
             return redirect(url_for('contacts.detail', id=contact.id))
         except ValidationError as e:
@@ -84,6 +86,7 @@ def edit(id):
         data = parse_form_data(request.form, field_configs)
         try:
             service.update(tenant_id, id, data)
+            log_action('edit', 'contacts', id, contact.full_name)
             flash('Đã cập nhật liên hệ thành công!', 'success')
             return redirect(url_for('contacts.detail', id=id))
         except ValidationError as e:
@@ -99,6 +102,8 @@ def edit(id):
 @contacts_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    contact = service.get_one(current_user.tenant_id, id)
+    log_action('delete', 'contacts', id, contact.full_name)
     service.delete(current_user.tenant_id, id)
     flash('Đã xóa liên hệ.', 'success')
     return redirect(url_for('contacts.list_contacts'))

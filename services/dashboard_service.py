@@ -219,96 +219,45 @@ def get_employee_performance(tenant_id):
 
 
 # ═══════════════════════════════════════════════════════════
-#  LIVE FEED
+#  LIVE FEED  (powered by ActivityLog)
 # ═══════════════════════════════════════════════════════════
-def get_live_feed(tenant_id, limit=20):
-    """Get recent system-wide actions as a live feed with user info."""
+def get_live_feed(tenant_id, limit=30):
+    """Get recent system-wide actions from the centralized activity log."""
+    from models.activity_log import ActivityLog
+    from services.log_service import ACTION_LABELS, MODULE_LABELS
+
+    logs = ActivityLog.query.filter_by(tenant_id=tenant_id)\
+        .order_by(ActivityLog.created_at.desc())\
+        .limit(limit).all()
+
     feed = []
+    for log in logs:
+        user_name = (log.user.full_name or log.user.username) if log.user else 'Hệ thống'
+        action_vn = ACTION_LABELS.get(log.action, log.action)
+        module_vn = MODULE_LABELS.get(log.module, log.module)
 
-    # Recent deals (created or closed)
-    recent_deals = Deal.query.filter(
-        Deal.tenant_id == tenant_id
-    ).order_by(Deal.updated_at.desc()).limit(limit).all()
-
-    for d in recent_deals:
-        user = User.query.get(d.owner_id) if d.owner_id else None
-        user_name = (user.full_name or user.username) if user else 'Hệ thống'
-        if d.status == 'won':
-            icon = '🏆'
-            action = f'đã chốt deal <b>{d.name}</b>'
-            color = '#52c41a'
-        elif d.status == 'lost':
-            icon = '❌'
-            action = f'đã đóng deal <b>{d.name}</b> (thua)'
-            color = '#ff4d4f'
+        # Build readable action text
+        if log.entity_name:
+            action_text = f'{action_vn} {module_vn} <b>{log.entity_name}</b>'
         else:
-            icon = '🤝'
-            action = f'cập nhật deal <b>{d.name}</b> ({d.stage})'
-            color = '#1890ff'
+            action_text = f'{action_vn} {module_vn}'
+
+        if log.details:
+            action_text += f' ({log.details})'
 
         feed.append({
-            'icon': icon,
+            'icon': log.icon,
             'user': user_name,
-            'action': action,
-            'value': d.value or 0,
-            'time': d.updated_at,
-            'time_str': _relative_time(d.updated_at),
-            'color': color,
-            'type': 'deal',
+            'action': action_text,
+            'value': log.value or 0,
+            'time': log.created_at,
+            'time_str': _relative_time(log.created_at),
+            'color': log.color,
+            'type': log.module,
         })
 
-    # Recent quotes
-    recent_quotes = Quote.query.filter(
-        Quote.tenant_id == tenant_id
-    ).order_by(Quote.updated_at.desc()).limit(10).all()
+    return feed
 
-    for q in recent_quotes:
-        user = User.query.get(q.created_by) if q.created_by else None
-        user_name = (user.full_name or user.username) if user else 'Hệ thống'
-        status_labels = {'draft': 'nháp', 'sent': 'đã gửi', 'accepted': 'chấp nhận', 'rejected': 'từ chối'}
-        status_txt = status_labels.get(q.status, q.status)
-        icon = '📄'
-        color = '#722ed1'
-        if q.status == 'accepted':
-            icon = '✅'
-            color = '#52c41a'
-        elif q.status == 'rejected':
-            icon = '🚫'
-            color = '#ff4d4f'
-
-        feed.append({
-            'icon': icon,
-            'user': user_name,
-            'action': f'báo giá <b>{q.title}</b> → {status_txt}',
-            'value': q.grand_total or 0,
-            'time': q.updated_at,
-            'time_str': _relative_time(q.updated_at),
-            'color': color,
-            'type': 'quote',
-        })
-
-    # Recent contacts
-    recent_contacts = Contact.query.filter(
-        Contact.tenant_id == tenant_id
-    ).order_by(Contact.created_at.desc()).limit(10).all()
-
-    for c in recent_contacts:
-        user = User.query.get(c.created_by) if c.created_by else None
-        user_name = (user.full_name or user.username) if user else 'Hệ thống'
-        feed.append({
-            'icon': '👤',
-            'user': user_name,
-            'action': f'thêm liên hệ <b>{c.full_name}</b>',
-            'value': 0,
-            'time': c.created_at,
-            'time_str': _relative_time(c.created_at),
-            'color': '#13c2c2',
-            'type': 'contact',
-        })
-
-    # Sort by time descending
-    feed.sort(key=lambda x: x['time'] or datetime.min, reverse=True)
-    return feed[:limit]
 
 
 # ═══════════════════════════════════════════════════════════

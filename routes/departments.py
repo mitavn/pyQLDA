@@ -8,6 +8,7 @@ from services.department_service import (
     assign_user_department, get_department_members
 )
 from services.permission_service import get_roles
+from services.log_service import log_action
 
 departments_bp = Blueprint('departments', __name__, url_prefix='/departments')
 
@@ -41,6 +42,7 @@ def create_dept():
         return redirect(url_for('departments.list_departments'))
 
     create_department(current_user.tenant_id, name, description, parent_id, manager_id)
+    log_action('create', 'departments', None, name)
     flash('Đã tạo phòng ban mới.', 'success')
     return redirect(url_for('departments.list_departments'))
 
@@ -56,6 +58,7 @@ def edit_dept(id):
     update_department(current_user.tenant_id, id,
                       name=name, description=description,
                       parent_id=parent_id, manager_id=manager_id)
+    log_action('edit', 'departments', id, name)
     flash('Đã cập nhật phòng ban.', 'success')
     return redirect(url_for('departments.list_departments'))
 
@@ -64,6 +67,7 @@ def edit_dept(id):
 @login_required
 def delete_dept(id):
     delete_department(current_user.tenant_id, id)
+    log_action('delete', 'departments', id)
     flash('Đã xóa phòng ban.', 'success')
     return redirect(url_for('departments.list_departments'))
 
@@ -82,6 +86,7 @@ def create_pos():
         return redirect(url_for('departments.list_departments'))
 
     create_position(current_user.tenant_id, name, level, department_id, description)
+    log_action('create', 'positions', None, name)
     flash('Đã tạo chức vụ mới.', 'success')
     return redirect(url_for('departments.list_departments'))
 

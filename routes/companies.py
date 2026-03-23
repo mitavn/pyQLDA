@@ -4,6 +4,7 @@ from services.company_service import CompanyService
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
 from services.base_data_provider import ValidationError
+from services.log_service import log_action
 
 companies_bp = Blueprint('companies', __name__, url_prefix='/companies')
 service = CompanyService()
@@ -36,6 +37,7 @@ def create():
         data = parse_form_data(request.form, field_configs)
         try:
             company = service.create(tenant_id, data, current_user.id)
+            log_action('create', 'companies', company.id, company.name)
             flash('Đã tạo công ty mới thành công!', 'success')
             return redirect(url_for('companies.detail', id=company.id))
         except ValidationError as e:
@@ -71,6 +73,7 @@ def edit(id):
         data = parse_form_data(request.form, field_configs)
         try:
             service.update(tenant_id, id, data)
+            log_action('edit', 'companies', id, company.name)
             flash('Đã cập nhật công ty thành công!', 'success')
             return redirect(url_for('companies.detail', id=id))
         except ValidationError as e:
@@ -83,6 +86,8 @@ def edit(id):
 @companies_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    company = service.get_one(current_user.tenant_id, id)
+    log_action('delete', 'companies', id, company.name)
     service.delete(current_user.tenant_id, id)
     flash('Đã xóa công ty.', 'success')
     return redirect(url_for('companies.list_companies'))

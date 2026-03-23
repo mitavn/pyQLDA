@@ -4,6 +4,7 @@ from services.deal_service import DealService, DEAL_STAGES
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
 from services.base_data_provider import ValidationError
+from services.log_service import log_action
 
 deals_bp = Blueprint('deals', __name__, url_prefix='/deals')
 service = DealService()
@@ -48,6 +49,7 @@ def create():
         data = parse_form_data(request.form, field_configs)
         try:
             deal = service.create(tenant_id, data, current_user.id)
+            log_action('create', 'deals', deal.id, deal.name, value=deal.value)
             flash('Đã tạo deal mới thành công!', 'success')
             return redirect(url_for('deals.detail', id=deal.id))
         except ValidationError as e:
@@ -91,6 +93,7 @@ def edit(id):
         data = parse_form_data(request.form, field_configs)
         try:
             service.update(tenant_id, id, data)
+            log_action('edit', 'deals', id, deal.name, value=deal.value)
             flash('Đã cập nhật deal thành công!', 'success')
             return redirect(url_for('deals.detail', id=id))
         except ValidationError as e:
@@ -106,6 +109,8 @@ def edit(id):
 @deals_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    deal = service.get_one(current_user.tenant_id, id)
+    log_action('delete', 'deals', id, deal.name, value=deal.value)
     service.delete(current_user.tenant_id, id)
     flash('Đã xóa deal.', 'success')
     return redirect(url_for('deals.list_deals'))
@@ -118,5 +123,6 @@ def move_stage(id):
     new_stage = request.json.get('stage')
     success, deal = service.move_stage(current_user.tenant_id, id, new_stage)
     if success:
+        log_action('stage', 'deals', id, deal.name, details=f'→ {deal.stage}', value=deal.value)
         return {'success': True, 'stage': deal.stage}
     return {'success': False}, 400

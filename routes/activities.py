@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from services.activity_service import ActivityService, ACTIVITY_TYPES
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
+from services.log_service import log_action
 
 activities_bp = Blueprint('activities', __name__, url_prefix='/activities')
 service = ActivityService()
@@ -38,7 +39,8 @@ def create():
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        service.create(tenant_id, data, current_user.id)
+        act = service.create(tenant_id, data, current_user.id)
+        log_action('create', 'activities', act.id if act else None, data.get('subject', ''))
         flash('Đã tạo hoạt động mới thành công!', 'success')
         return redirect(url_for('activities.list_activities'))
 
@@ -61,6 +63,7 @@ def edit(id):
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
         service.update(tenant_id, id, data)
+        log_action('edit', 'activities', id, data.get('subject', activity.subject if hasattr(activity, 'subject') else ''))
         flash('Đã cập nhật hoạt động thành công!', 'success')
         return redirect(url_for('activities.list_activities'))
 
@@ -75,6 +78,8 @@ def edit(id):
 @activities_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
+    activity = service.get_one(current_user.tenant_id, id)
+    log_action('delete', 'activities', id, activity.subject if hasattr(activity, 'subject') else '')
     service.delete(current_user.tenant_id, id)
     flash('Đã xóa hoạt động.', 'success')
     return redirect(url_for('activities.list_activities'))
