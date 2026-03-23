@@ -3,10 +3,130 @@
 {% block title %}{{ title }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Tax Lookup Panel */
+.tax-lookup-panel {
+    background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+    border: 1px solid #91d5ff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.tax-lookup-panel::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(24,144,255,0.08) 0%, transparent 70%);
+    border-radius: 0 0 0 100%;
+}
+.tax-lookup-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 700; color: #1890ff;
+    margin-bottom: 14px;
+}
+.tax-lookup-title i { font-size: 18px; }
+.tax-lookup-row {
+    display: flex; gap: 10px; align-items: stretch;
+}
+.tax-lookup-row input {
+    flex: 1; padding: 10px 14px; border: 2px solid #d9d9d9;
+    border-radius: 8px; font-size: 14px; font-weight: 600;
+    letter-spacing: 1px; transition: border-color 0.2s;
+    background: #fff;
+}
+.tax-lookup-row input:focus {
+    outline: none; border-color: #1890ff;
+    box-shadow: 0 0 0 3px rgba(24,144,255,0.12);
+}
+.btn-lookup {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; background: #1890ff; color: #fff;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-lookup:hover { background: #096dd9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(24,144,255,0.3); }
+.btn-lookup:active { transform: translateY(0); }
+.btn-lookup.loading { opacity: 0.7; pointer-events: none; }
+.btn-lookup .spinner {
+    display: none; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+.btn-lookup.loading .spinner { display: inline-block; }
+.btn-lookup.loading .btn-icon { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Lookup Result */
+.tax-result {
+    margin-top: 14px; padding: 16px 20px;
+    background: #fff; border-radius: 10px;
+    border: 1px solid #d9d9d9; display: none;
+}
+.tax-result.show { display: block; animation: fadeSlide 0.3s ease; }
+@keyframes fadeSlide { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+.tax-result.success { border-color: #b7eb8f; background: #f6ffed; }
+.tax-result.error { border-color: #ffccc7; background: #fff2f0; }
+
+.tax-result-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; margin-bottom: 10px;
+}
+.tax-result-header.success-header { color: #52c41a; }
+.tax-result-header.error-header { color: #ff4d4f; }
+
+.tax-result-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px;
+}
+.tax-result-item { font-size: 13px; }
+.tax-result-item .label { color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.tax-result-item .value { color: var(--text-primary); font-weight: 600; margin-top: 2px; }
+.tax-result-item.full-width { grid-column: 1 / -1; }
+
+.tax-status-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+}
+.tax-status-tag.active { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.tax-status-tag.inactive { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+
+.btn-apply {
+    margin-top: 12px; padding: 8px 20px;
+    background: #52c41a; color: #fff; border: none;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-apply:hover { background: #389e0d; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(82,196,26,0.3); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <div class="card-header"><h3>{{ title }}</h3></div>
     <div class="card-body">
+        <!-- Tax Lookup Panel -->
+        <div class="tax-lookup-panel">
+            <div class="tax-lookup-title">
+                <i class="fas fa-search-dollar"></i>
+                Tra cứu Mã Số Thuế (MST)
+            </div>
+            <div class="tax-lookup-row">
+                <input type="text" id="taxCodeInput" placeholder="Nhập mã số thuế, VD: 0101243150"
+                       maxlength="14" autocomplete="off">
+                <button type="button" class="btn-lookup" id="btnLookup" onclick="lookupTaxCode()">
+                    <span class="spinner"></span>
+                    <i class="fas fa-search btn-icon"></i>
+                    <span>Tra cứu</span>
+                </button>
+            </div>
+            <div class="tax-result" id="taxResult"></div>
+        </div>
+
         <form method="POST" class="dynamic-form">
             {% set grouped = {} %}
             {% for fc in field_configs %}
@@ -29,4 +149,142 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fieldMap = {
+    name: 'name',
+    short_name: 'short_name',
+    tax_code: 'tax_code',
+    address: 'billing_address'
+};
+
+function lookupTaxCode() {
+    const input = document.getElementById('taxCodeInput');
+    const btn = document.getElementById('btnLookup');
+    const resultDiv = document.getElementById('taxResult');
+    const taxCode = input.value.trim().replace(/[^0-9\-]/g, '');
+
+    if (!taxCode || taxCode.length < 10) {
+        showError('Vui lòng nhập MST hợp lệ (10-14 ký tự)');
+        return;
+    }
+
+    btn.classList.add('loading');
+    resultDiv.className = 'tax-result';
+    resultDiv.style.display = 'none';
+
+    fetch('/api/tax-lookup/' + taxCode)
+        .then(r => r.json())
+        .then(data => {
+            btn.classList.remove('loading');
+            if (data.success) {
+                showSuccess(data.data);
+            } else {
+                showError(data.message || 'Không tìm thấy');
+            }
+        })
+        .catch(err => {
+            btn.classList.remove('loading');
+            showError('Lỗi kết nối, vui lòng thử lại');
+        });
+}
+
+function showSuccess(data) {
+    const resultDiv = document.getElementById('taxResult');
+    const isActive = data.status && data.status.includes('hoạt động');
+    resultDiv.innerHTML = `
+        <div class="tax-result-header success-header">
+            <i class="fas fa-check-circle"></i> Tìm thấy doanh nghiệp
+        </div>
+        <div class="tax-result-grid">
+            <div class="tax-result-item full-width">
+                <div class="label">Tên công ty</div>
+                <div class="value">${data.name}</div>
+            </div>
+            ${data.short_name ? `
+            <div class="tax-result-item">
+                <div class="label">Tên viết tắt</div>
+                <div class="value">${data.short_name}</div>
+            </div>` : ''}
+            <div class="tax-result-item">
+                <div class="label">Mã số thuế</div>
+                <div class="value">${data.tax_code}</div>
+            </div>
+            <div class="tax-result-item full-width">
+                <div class="label">Địa chỉ</div>
+                <div class="value">${data.address}</div>
+            </div>
+            <div class="tax-result-item">
+                <div class="label">Trạng thái</div>
+                <div class="value">
+                    <span class="tax-status-tag ${isActive ? 'active' : 'inactive'}">
+                        <i class="fas fa-${isActive ? 'check-circle' : 'times-circle'}"></i>
+                        ${data.status}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn-apply" onclick="applyTaxData()">
+            <i class="fas fa-arrow-down"></i> Áp dụng vào form
+        </button>
+    `;
+    resultDiv.className = 'tax-result success show';
+    resultDiv._data = data;
+}
+
+function showError(msg) {
+    const resultDiv = document.getElementById('taxResult');
+    resultDiv.innerHTML = `
+        <div class="tax-result-header error-header">
+            <i class="fas fa-exclamation-circle"></i> ${msg}
+        </div>
+    `;
+    resultDiv.className = 'tax-result error show';
+}
+
+function applyTaxData() {
+    const resultDiv = document.getElementById('taxResult');
+    const data = resultDiv._data;
+    if (!data) return;
+
+    const mappings = {
+        name: data.name,
+        short_name: data.short_name,
+        tax_code: data.tax_code,
+        billing_address: data.address
+    };
+
+    for (const [fieldName, value] of Object.entries(mappings)) {
+        if (!value) continue;
+        const el = document.getElementById(fieldName);
+        if (el) {
+            el.value = value;
+            el.style.transition = 'background 0.3s';
+            el.style.background = '#f6ffed';
+            setTimeout(() => { el.style.background = ''; }, 1500);
+        }
+    }
+
+    // Flash the apply button
+    const btn = resultDiv.querySelector('.btn-apply');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-check"></i> Đã áp dụng!';
+        btn.style.background = '#389e0d';
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-arrow-down"></i> Áp dụng vào form';
+            btn.style.background = '';
+        }, 2000);
+    }
+}
+
+// Allow Enter key to trigger lookup
+document.getElementById('taxCodeInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        lookupTaxCode();
+    }
+});
+</script>
 {% endblock %}

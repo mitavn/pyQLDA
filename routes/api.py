@@ -8,9 +8,38 @@ from models.deal import Deal
 from services.field_service import update_field_order, toggle_field_visibility, reset_fields_to_default
 import csv
 import io
+import requests as http_requests
 from flask import Response
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+
+@api_bp.route('/tax-lookup/<tax_code>')
+@login_required
+def tax_lookup(tax_code):
+    """Tra cứu MST từ Tổng cục Thuế qua VietQR API."""
+    try:
+        resp = http_requests.get(
+            f'https://api.vietqr.io/v2/business/{tax_code}',
+            timeout=10
+        )
+        data = resp.json()
+        if data.get('code') == '00' and data.get('data'):
+            info = data['data']
+            return jsonify({
+                'success': True,
+                'data': {
+                    'name': info.get('name', ''),
+                    'short_name': info.get('shortName', ''),
+                    'international_name': info.get('internationalName', ''),
+                    'address': info.get('address', ''),
+                    'status': info.get('status', ''),
+                    'tax_code': info.get('id', tax_code),
+                }
+            })
+        return jsonify({'success': False, 'message': 'Không tìm thấy MST này'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi tra cứu: {str(e)}'}), 500
 
 
 @api_bp.route('/fields/reorder', methods=['POST'])
