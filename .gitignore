@@ -28,5 +28,7 @@ instance/
 Thumbs.db
 .DS_Store
 
-# Gemini
+# Gemini / Agent
 .gemini/
+.agent/
+.agents/
