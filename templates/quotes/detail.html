@@ -20,20 +20,25 @@
 .q-header-badge { font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 12px; color: #fff; }
 .q-actions { display: flex; gap: 8px; }
 
-/* Status pipeline */
-.status-pipeline { display: flex; gap: 0; margin-bottom: 20px; }
-.status-step {
-    padding: 8px 24px; font-size: 13px; font-weight: 600;
-    color: #fff; position: relative; cursor: pointer; transition: all 0.2s; border: none;
+/* Status tags */
+.status-tags { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.status-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 18px; font-size: 13px; font-weight: 600;
+    border-radius: 20px; cursor: pointer; transition: all 0.25s ease;
+    border: 2px solid transparent; position: relative;
 }
-.status-step:first-child { border-radius: 20px 0 0 20px; }
-.status-step:last-child { border-radius: 0 20px 20px 0; }
-.status-step.draft { background: #8c8c8c; }
-.status-step.sent { background: #1890ff; }
-.status-step.accepted { background: #52c41a; }
-.status-step.rejected { background: #ff4d4f; }
-.status-step.inactive { opacity: 0.3; }
-.status-step.current { opacity: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.status-tag i { font-size: 11px; }
+.status-tag.draft { background: #f5f5f5; color: #8c8c8c; border-color: #d9d9d9; }
+.status-tag.draft.current { background: #8c8c8c; color: #fff; border-color: #8c8c8c; box-shadow: 0 2px 8px rgba(140,140,140,0.35); }
+.status-tag.sent { background: #e6f7ff; color: #1890ff; border-color: #91d5ff; }
+.status-tag.sent.current { background: #1890ff; color: #fff; border-color: #1890ff; box-shadow: 0 2px 8px rgba(24,144,255,0.35); }
+.status-tag.accepted { background: #f6ffed; color: #52c41a; border-color: #b7eb8f; }
+.status-tag.accepted.current { background: #52c41a; color: #fff; border-color: #52c41a; box-shadow: 0 2px 8px rgba(82,196,26,0.35); }
+.status-tag.rejected { background: #fff2f0; color: #ff4d4f; border-color: #ffccc7; }
+.status-tag.rejected.current { background: #ff4d4f; color: #fff; border-color: #ff4d4f; box-shadow: 0 2px 8px rgba(255,77,79,0.35); }
+.status-tag:hover { transform: translateY(-1px); filter: brightness(0.95); }
+.status-tag.current:hover { filter: brightness(1.08); }
 
 /* Parties: Từ / Đến */
 .q-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -110,17 +115,15 @@
     </div>
 </div>
 
-<!-- Status Pipeline -->
-<div class="status-pipeline">
-    {% set ns = namespace(found=false) %}
-    {% for key, label in [('draft','Nháp'), ('sent','Đã gửi'), ('accepted','Chấp nhận')] %}
+<!-- Status Tags -->
+<div class="status-tags">
+    {% for key, label, icon in [('draft','Nháp','fa-file'), ('sent','Đã gửi','fa-paper-plane'), ('accepted','Chấp nhận','fa-check-circle'), ('rejected','Từ chối','fa-times-circle')] %}
     <form method="POST" action="{{ url_for('quotes.update_status', id=quote.id) }}" style="display:inline">
         <input type="hidden" name="status" value="{{ key }}">
-        <button type="submit" class="status-step {{ key }} {% if quote.status == key %}current{% elif ns.found %}inactive{% endif %}">
-            {{ label }}
+        <button type="submit" class="status-tag {{ key }} {% if quote.status == key %}current{% endif %}">
+            <i class="fas {{ icon }}"></i> {{ label }}
         </button>
     </form>
-    {% if quote.status == key %}{% set ns.found = true %}{% endif %}
     {% endfor %}
 </div>
 
