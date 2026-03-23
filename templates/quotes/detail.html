@@ -219,7 +219,8 @@
             <thead>
                 <tr>
                     <th style="width:5%">#</th>
-                    <th style="width:40%">Sản phẩm / Dịch vụ</th>
+                    <th style="width:35%">Sản phẩm / Dịch vụ</th>
+                    <th class="text-right">ĐVT</th>
                     <th class="text-right">Đơn giá</th>
                     <th class="text-right">SL</th>
                     <th class="text-right">Giảm giá</th>
@@ -232,15 +233,19 @@
                     <td style="color:var(--text-secondary)">{{ loop.index }}</td>
                     <td>
                         <strong>{{ item.title }}</strong>
+                        {% if item.product and item.product.sku %}
+                        <span style="display:inline-block;padding:1px 6px;border-radius:4px;background:#f0f0f0;font-size:10px;color:#595959;font-weight:600;margin-left:4px;vertical-align:middle">{{ item.product.sku }}</span>
+                        {% endif %}
                         {% if item.description %}<br><span style="font-size:12px;color:var(--text-secondary)">{{ item.description }}</span>{% endif %}
                     </td>
+                    <td class="text-right" style="color:var(--text-secondary)">{{ item.unit or '-' }}</td>
                     <td class="text-right">{{ item.unit_price|format_currency }}</td>
                     <td class="text-right">{{ item.quantity|int }}</td>
                     <td class="text-right">{% if item.discount %}{{ item.discount }}%{% else %}-{% endif %}</td>
                     <td class="text-right"><strong>{{ item.total|format_currency }}</strong></td>
                 </tr>
                 {% else %}
-                <tr><td colspan="6" class="text-center text-muted" style="padding:30px">Chưa có sản phẩm</td></tr>
+                <tr><td colspan="7" class="text-center text-muted" style="padding:30px">Chưa có sản phẩm</td></tr>
                 {% endfor %}
             </tbody>
         </table>

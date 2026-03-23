@@ -20,12 +20,13 @@
     font-weight: 600; color: var(--text-secondary);
     border-bottom: 2px solid var(--border);
 }
-.line-items-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.line-items-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .line-items-table input { width: 100%; }
-.line-items-table .col-title { width: 40%; }
-.line-items-table .col-num { width: 15%; }
+.line-items-table .col-product { width: 35%; }
+.line-items-table .col-unit { width: 8%; }
+.line-items-table .col-num { width: 12%; }
 .line-items-table .col-act { width: 40px; text-align: center; }
-.item-total-cell { font-weight: 600; text-align: right; white-space: nowrap; padding-right: 12px !important; }
+.item-total-cell { font-weight: 600; text-align: right; white-space: nowrap; padding-right: 12px !important; padding-top: 12px !important; }
 .add-item-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 16px; color: var(--primary); font-size: 13px;
@@ -38,8 +39,91 @@
     border: 1px solid #ffccc7; background: #fff2f0;
     color: var(--danger); cursor: pointer; display: flex;
     align-items: center; justify-content: center; font-size: 14px;
+    margin-top: 6px;
 }
 .remove-item-btn:hover { background: #ff4d4f; color: #fff; }
+
+/* Product search autocomplete */
+.product-search-wrap { position: relative; }
+.product-search-input { width: 100%; }
+.product-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.12); max-height: 320px; overflow-y: auto;
+    display: none;
+}
+.product-dropdown.show { display: block; }
+.product-option {
+    padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f5f5f5;
+    display: flex; align-items: flex-start; gap: 10px;
+    transition: background 0.15s;
+}
+.product-option:last-child { border-bottom: none; }
+.product-option:hover, .product-option.active { background: #f0f5ff; }
+.product-option-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; flex-shrink: 0;
+    background: var(--primary-light); color: var(--primary);
+}
+.product-option-info { flex: 1; min-width: 0; }
+.product-option-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+.product-option-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; display: flex; gap: 10px; flex-wrap: wrap; }
+.product-option-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.product-option-price { font-weight: 700; color: var(--primary); font-size: 13px; white-space: nowrap; }
+
+/* Stock info badge on row */
+.stock-info-row {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-top: 4px; font-size: 11px;
+}
+.stock-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px; font-weight: 500;
+}
+.stock-chip.in { background: #f6ffed; color: #389e0d; }
+.stock-chip.low { background: #fff7e6; color: #d48806; }
+.stock-chip.out { background: #fff2f0; color: #cf1322; }
+.stock-chip.service { background: #e6f7ff; color: #096dd9; }
+.stock-chip.planned { background: #f0f5ff; color: #2f54eb; }
+.stock-chip.warning { background: #fff2f0; color: #cf1322; font-weight: 600; }
+.stock-chip i { font-size: 10px; }
+
+.sku-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    background: #f0f0f0; font-size: 10px; color: #595959;
+    font-weight: 600; margin-left: 4px; vertical-align: middle;
+}
+
+/* Quick add modal */
+.product-quick-modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); z-index: 2000; display: none;
+    align-items: center; justify-content: center;
+}
+.product-quick-modal.show { display: flex; }
+.product-quick-body {
+    background: #fff; border-radius: 12px; width: 700px; max-height: 80vh;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.product-quick-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.product-quick-header h3 { font-size: 16px; font-weight: 700; }
+.product-quick-header .close-btn { cursor: pointer; font-size: 18px; color: var(--text-secondary); background: none; border: none; }
+.product-quick-search { padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.product-quick-search input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+.product-quick-list { max-height: 50vh; overflow-y: auto; padding: 8px 0; }
+.product-quick-item {
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: background 0.15s;
+}
+.product-quick-item:hover { background: #f0f5ff; }
+.product-quick-item.selected { background: #e6f7ff; }
+.product-quick-item .pq-check { width: 20px; height: 20px; border: 2px solid #d9d9d9; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.product-quick-item.selected .pq-check { background: var(--primary); border-color: var(--primary); color: #fff; }
+.product-quick-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
 </style>
 {% endblock %}
 
@@ -125,28 +209,43 @@
 
     <!-- Sản phẩm / Dịch vụ -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
             <h3><i class="fas fa-boxes" style="color:var(--primary);margin-right:8px"></i>Sản phẩm / Dịch vụ</h3>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openQuickAdd()" style="font-size:12px">
+                <i class="fas fa-th-list"></i> Thêm từ kho
+            </button>
         </div>
         <div class="card-body" style="padding:12px">
             <table class="line-items-table" id="itemsTable">
                 <thead>
                     <tr>
-                        <th class="col-title">Tiêu đề</th>
+                        <th class="col-product">Sản phẩm</th>
+                        <th class="col-unit">ĐVT</th>
                         <th class="col-num">Đơn giá</th>
                         <th class="col-num">Số lượng</th>
                         <th class="col-num">Giảm giá (%)</th>
-                        <th style="width:120px;text-align:right">Tổng giá</th>
+                        <th style="width:110px;text-align:right">Tổng giá</th>
                         <th class="col-act"></th>
                     </tr>
                 </thead>
                 <tbody id="itemsBody">
                     {% if quote and quote.items %}
                     {% for item in quote.items %}
-                    <tr class="item-row">
-                        <td><input type="text" name="item_title[]" class="form-control" value="{{ item.title }}" placeholder="Tên sản phẩm" required></td>
+                    <tr class="item-row" data-product-id="{{ item.product_id or '' }}">
+                        <td>
+                            <div class="product-search-wrap">
+                                <input type="hidden" name="item_product_id[]" value="{{ item.product_id or '' }}">
+                                <input type="text" name="item_title[]" class="form-control product-search-input" value="{{ item.title }}" placeholder="Gõ tên sản phẩm..." required autocomplete="off" onfocus="onProductFocus(this)" oninput="onProductInput(this)">
+                                <div class="product-dropdown"></div>
+                            </div>
+                            {% if item.product and item.product.sku %}
+                            <span class="sku-badge" style="margin-top:4px;display:inline-block">{{ item.product.sku }}</span>
+                            {% endif %}
+                            <div class="stock-info-row" id="stockInfo_{{ loop.index0 }}"></div>
+                        </td>
+                        <td><input type="text" name="item_unit[]" class="form-control item-unit" value="{{ item.unit or '' }}" placeholder="ĐVT"></td>
                         <td><input type="number" name="item_price[]" class="form-control item-price" step="0.01" value="{{ item.unit_price }}" oninput="calcRow(this)"></td>
-                        <td><input type="number" name="item_qty[]" class="form-control item-qty" step="1" value="{{ item.quantity }}" oninput="calcRow(this)"></td>
+                        <td><input type="number" name="item_qty[]" class="form-control item-qty" step="0.01" value="{{ item.quantity }}" oninput="calcRow(this)"></td>
                         <td><input type="number" name="item_discount[]" class="form-control item-disc" step="0.1" value="{{ item.discount }}" oninput="calcRow(this)"></td>
                         <td class="item-total-cell">{{ item.total|format_currency }}</td>
                         <td class="col-act"><button type="button" class="remove-item-btn" onclick="removeRow(this)" title="Xóa"><i class="fas fa-trash-alt"></i></button></td>
@@ -154,9 +253,17 @@
                     {% endfor %}
                     {% else %}
                     <tr class="item-row">
-                        <td><input type="text" name="item_title[]" class="form-control" placeholder="Tên sản phẩm" required></td>
+                        <td>
+                            <div class="product-search-wrap">
+                                <input type="hidden" name="item_product_id[]" value="">
+                                <input type="text" name="item_title[]" class="form-control product-search-input" placeholder="Gõ tên sản phẩm hoặc SKU..." required autocomplete="off" onfocus="onProductFocus(this)" oninput="onProductInput(this)">
+                                <div class="product-dropdown"></div>
+                            </div>
+                            <div class="stock-info-row"></div>
+                        </td>
+                        <td><input type="text" name="item_unit[]" class="form-control item-unit" value="" placeholder="ĐVT"></td>
                         <td><input type="number" name="item_price[]" class="form-control item-price" step="0.01" value="0" oninput="calcRow(this)"></td>
-                        <td><input type="number" name="item_qty[]" class="form-control item-qty" step="1" value="1" oninput="calcRow(this)"></td>
+                        <td><input type="number" name="item_qty[]" class="form-control item-qty" step="0.01" value="1" oninput="calcRow(this)"></td>
                         <td><input type="number" name="item_discount[]" class="form-control item-disc" step="0.1" value="0" oninput="calcRow(this)"></td>
                         <td class="item-total-cell">0</td>
                         <td class="col-act"><button type="button" class="remove-item-btn" onclick="removeRow(this)" title="Xóa"><i class="fas fa-trash-alt"></i></button></td>
@@ -206,12 +313,34 @@
         <a href="{{ url_for('quotes.list_quotes') }}" class="btn btn-default">Hủy</a>
     </div>
 </form>
+
+<!-- Quick Add Product Modal -->
+<div class="product-quick-modal" id="quickAddModal">
+    <div class="product-quick-body">
+        <div class="product-quick-header">
+            <h3><i class="fas fa-boxes" style="color:var(--primary);margin-right:8px"></i>Chọn sản phẩm từ kho</h3>
+            <button class="close-btn" onclick="closeQuickAdd()">&times;</button>
+        </div>
+        <div class="product-quick-search">
+            <input type="text" id="quickSearchInput" placeholder="Tìm sản phẩm theo tên, SKU..." oninput="quickSearch(this.value)">
+        </div>
+        <div class="product-quick-list" id="quickProductList"></div>
+        <div class="product-quick-footer">
+            <button type="button" class="btn btn-default" onclick="closeQuickAdd()">Hủy</button>
+            <button type="button" class="btn btn-primary" onclick="confirmQuickAdd()"><i class="fas fa-plus"></i> Thêm đã chọn (<span id="quickSelectedCount">0</span>)</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+var searchTimeout = null;
+var quickSelectedProducts = {};
+
 function fmt(n) { return n.toLocaleString('vi-VN'); }
 
+// ── Row calculation ──────────────────────────────────
 function calcRow(el) {
     var row = el.closest('.item-row');
     var p = parseFloat(row.querySelector('.item-price').value) || 0;
@@ -220,6 +349,8 @@ function calcRow(el) {
     var total = p * q * (1 - d / 100);
     row.querySelector('.item-total-cell').textContent = fmt(Math.round(total));
     calcTotals();
+    // Check stock warning
+    checkStockWarning(row);
 }
 
 function calcTotals() {
@@ -238,11 +369,160 @@ function calcTotals() {
     document.getElementById('grandTotalDisplay').textContent = fmt(Math.round(subtotal + tax));
 }
 
+// ── Product search autocomplete ──────────────────────
+function onProductFocus(input) {
+    var keyword = input.value.trim();
+    if (keyword.length >= 1) {
+        searchProducts(input, keyword);
+    }
+}
+
+function onProductInput(input) {
+    clearTimeout(searchTimeout);
+    var keyword = input.value.trim();
+    // Clear product_id if user types manually
+    var hiddenInput = input.closest('td').querySelector('input[name="item_product_id[]"]');
+    if (hiddenInput) hiddenInput.value = '';
+    // Clear stock info
+    var stockRow = input.closest('td').querySelector('.stock-info-row');
+    if (stockRow) stockRow.innerHTML = '';
+
+    if (keyword.length >= 1) {
+        searchTimeout = setTimeout(function() { searchProducts(input, keyword); }, 250);
+    } else {
+        hideDropdown(input);
+    }
+}
+
+function searchProducts(input, keyword) {
+    fetch('/quotes/api/products/search?q=' + encodeURIComponent(keyword))
+        .then(r => r.json())
+        .then(data => showProductDropdown(input, data))
+        .catch(err => console.error(err));
+}
+
+function showProductDropdown(input, products) {
+    var dropdown = input.parentElement.querySelector('.product-dropdown');
+    if (!products.length) {
+        dropdown.innerHTML = '<div style="padding:14px;text-align:center;color:var(--text-secondary);font-size:13px"><i class="fas fa-search" style="margin-right:6px"></i>Không tìm thấy sản phẩm</div>';
+        dropdown.classList.add('show');
+        return;
+    }
+    var html = '';
+    products.forEach(function(p) {
+        var stockColor = p.stock_status === 'in' ? '#389e0d' : (p.stock_status === 'low' ? '#d48806' : (p.stock_status === 'out' ? '#cf1322' : '#096dd9'));
+        var stockBg = p.stock_status === 'in' ? '#f6ffed' : (p.stock_status === 'low' ? '#fff7e6' : (p.stock_status === 'out' ? '#fff2f0' : '#e6f7ff'));
+        html += '<div class="product-option" onclick=\'selectProduct(this, ' + JSON.stringify(p).replace(/'/g, "\\'") + ')\'>';
+        html += '<div class="product-option-icon">' + (p.name.substring(0, 2).toUpperCase()) + '</div>';
+        html += '<div class="product-option-info">';
+        html += '<div class="product-option-name">' + escapeHtml(p.name);
+        if (p.sku) html += ' <span class="sku-badge">' + escapeHtml(p.sku) + '</span>';
+        html += '</div>';
+        html += '<div class="product-option-meta">';
+        html += '<span style="background:' + stockBg + ';color:' + stockColor + ';padding:1px 6px;border-radius:8px;font-weight:600"><i class="fas fa-cubes"></i> ' + p.stock_status_label + ': ' + p.stock_quantity + ' ' + p.unit + '</span>';
+        if (p.planned_import > 0) html += '<span style="color:#2f54eb"><i class="fas fa-arrow-down"></i> Nhập DK: +' + p.planned_import + '</span>';
+        if (p.planned_export > 0) html += '<span style="color:#d48806"><i class="fas fa-arrow-up"></i> Xuất DK: -' + p.planned_export + '</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="product-option-price">' + fmt(p.sell_price) + '</div>';
+        html += '</div>';
+    });
+    dropdown.innerHTML = html;
+    dropdown.classList.add('show');
+}
+
+function selectProduct(optionEl, product) {
+    var row = optionEl.closest('.item-row');
+    var tdProduct = row.querySelector('td:first-child');
+
+    // Set values
+    tdProduct.querySelector('input[name="item_title[]"]').value = product.name;
+    tdProduct.querySelector('input[name="item_product_id[]"]').value = product.id;
+    row.querySelector('.item-unit').value = product.unit;
+    row.querySelector('.item-price').value = product.sell_price;
+
+    // Show stock info
+    showStockInfo(tdProduct.querySelector('.stock-info-row'), product, row);
+
+    // Hide dropdown
+    hideDropdown(tdProduct.querySelector('.product-search-input'));
+
+    // Recalculate
+    calcRow(row.querySelector('.item-price'));
+
+    // Store product data on row for later stock checks
+    row.dataset.productId = product.id;
+    row.dataset.stockQty = product.stock_quantity;
+    row.dataset.available = product.available;
+    row.dataset.isService = product.is_service ? '1' : '0';
+}
+
+function showStockInfo(container, product, row) {
+    var html = '';
+    if (product.is_service) {
+        html += '<span class="stock-chip service"><i class="fas fa-concierge-bell"></i> Dịch vụ</span>';
+    } else {
+        var cls = product.stock_status === 'in' ? 'in' : (product.stock_status === 'low' ? 'low' : 'out');
+        html += '<span class="stock-chip ' + cls + '"><i class="fas fa-cubes"></i> Tồn: ' + product.stock_quantity + ' ' + product.unit + '</span>';
+        if (product.planned_import > 0) {
+            html += '<span class="stock-chip planned"><i class="fas fa-arrow-down"></i> Nhập DK: +' + product.planned_import + '</span>';
+        }
+        if (product.planned_export > 0) {
+            html += '<span class="stock-chip planned"><i class="fas fa-arrow-up"></i> Xuất DK: -' + product.planned_export + '</span>';
+        }
+        html += '<span class="stock-chip" style="background:#f0f0f0;color:#595959"><i class="fas fa-calculator"></i> Khả dụng: ' + product.available + '</span>';
+    }
+    container.innerHTML = html;
+    // Check warning
+    var qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+    if (!product.is_service && qty > product.available) {
+        container.innerHTML += '<span class="stock-chip warning"><i class="fas fa-exclamation-triangle"></i> SL vượt tồn khả dụng!</span>';
+    }
+}
+
+function checkStockWarning(row) {
+    if (row.dataset.isService === '1') return;
+    var available = parseFloat(row.dataset.available);
+    if (isNaN(available)) return;
+    var qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+    var stockRow = row.querySelector('.stock-info-row');
+    if (!stockRow) return;
+    // Remove old warnings
+    stockRow.querySelectorAll('.stock-chip.warning').forEach(el => el.remove());
+    if (qty > available) {
+        stockRow.insertAdjacentHTML('beforeend', '<span class="stock-chip warning"><i class="fas fa-exclamation-triangle"></i> SL vượt tồn khả dụng!</span>');
+    }
+}
+
+function hideDropdown(input) {
+    var dropdown = input.parentElement.querySelector('.product-dropdown');
+    if (dropdown) dropdown.classList.remove('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.product-search-wrap')) {
+        document.querySelectorAll('.product-dropdown').forEach(d => d.classList.remove('show'));
+    }
+});
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ── Add / Remove rows ────────────────────────────────
 function addRow() {
     var html = '<tr class="item-row">' +
-        '<td><input type="text" name="item_title[]" class="form-control" placeholder="Tên sản phẩm" required></td>' +
+        '<td><div class="product-search-wrap">' +
+        '<input type="hidden" name="item_product_id[]" value="">' +
+        '<input type="text" name="item_title[]" class="form-control product-search-input" placeholder="Gõ tên sản phẩm hoặc SKU..." required autocomplete="off" onfocus="onProductFocus(this)" oninput="onProductInput(this)">' +
+        '<div class="product-dropdown"></div></div>' +
+        '<div class="stock-info-row"></div></td>' +
+        '<td><input type="text" name="item_unit[]" class="form-control item-unit" value="" placeholder="ĐVT"></td>' +
         '<td><input type="number" name="item_price[]" class="form-control item-price" step="0.01" value="0" oninput="calcRow(this)"></td>' +
-        '<td><input type="number" name="item_qty[]" class="form-control item-qty" step="1" value="1" oninput="calcRow(this)"></td>' +
+        '<td><input type="number" name="item_qty[]" class="form-control item-qty" step="0.01" value="1" oninput="calcRow(this)"></td>' +
         '<td><input type="number" name="item_discount[]" class="form-control item-disc" step="0.1" value="0" oninput="calcRow(this)"></td>' +
         '<td class="item-total-cell">0</td>' +
         '<td class="col-act"><button type="button" class="remove-item-btn" onclick="removeRow(this)" title="Xóa"><i class="fas fa-trash-alt"></i></button></td>' +
@@ -258,11 +538,141 @@ function removeRow(btn) {
     }
 }
 
+// ── Quick Add Modal ──────────────────────────────────
+function openQuickAdd() {
+    quickSelectedProducts = {};
+    document.getElementById('quickSelectedCount').textContent = '0';
+    quickSearch('');
+    document.getElementById('quickAddModal').classList.add('show');
+    setTimeout(function() { document.getElementById('quickSearchInput').focus(); }, 100);
+}
+
+function closeQuickAdd() {
+    document.getElementById('quickAddModal').classList.remove('show');
+}
+
+function quickSearch(keyword) {
+    fetch('/quotes/api/products/search?q=' + encodeURIComponent(keyword))
+        .then(r => r.json())
+        .then(data => renderQuickList(data))
+        .catch(err => console.error(err));
+}
+
+function renderQuickList(products) {
+    var list = document.getElementById('quickProductList');
+    if (!products.length) {
+        list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-secondary)"><i class="fas fa-box-open" style="font-size:24px;margin-bottom:8px;display:block"></i>Không tìm thấy sản phẩm</div>';
+        return;
+    }
+    var html = '';
+    products.forEach(function(p) {
+        var isSelected = quickSelectedProducts[p.id] ? ' selected' : '';
+        var stockColor = p.stock_status === 'in' ? '#389e0d' : (p.stock_status === 'low' ? '#d48806' : '#cf1322');
+        html += '<div class="product-quick-item' + isSelected + '" data-pid="' + p.id + '" onclick="toggleQuickSelect(' + p.id + ', this, ' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">';
+        html += '<div class="pq-check">' + (isSelected ? '<i class="fas fa-check" style="font-size:11px"></i>' : '') + '</div>';
+        html += '<div class="product-option-icon">' + p.name.substring(0, 2).toUpperCase() + '</div>';
+        html += '<div class="product-option-info">';
+        html += '<div class="product-option-name">' + escapeHtml(p.name);
+        if (p.sku) html += ' <span class="sku-badge">' + escapeHtml(p.sku) + '</span>';
+        html += '</div>';
+        html += '<div class="product-option-meta">';
+        html += '<span style="color:' + stockColor + '"><i class="fas fa-cubes"></i> ' + p.stock_status_label + ': ' + p.stock_quantity + ' ' + p.unit + '</span>';
+        html += '<span><i class="fas fa-tag"></i> ' + fmt(p.sell_price) + '</span>';
+        if (p.category) html += '<span><i class="fas fa-folder"></i> ' + p.category + '</span>';
+        html += '</div></div></div>';
+    });
+    list.innerHTML = html;
+}
+
+function toggleQuickSelect(id, el, product) {
+    if (quickSelectedProducts[id]) {
+        delete quickSelectedProducts[id];
+        el.classList.remove('selected');
+        el.querySelector('.pq-check').innerHTML = '';
+    } else {
+        quickSelectedProducts[id] = product;
+        el.classList.add('selected');
+        el.querySelector('.pq-check').innerHTML = '<i class="fas fa-check" style="font-size:11px"></i>';
+    }
+    document.getElementById('quickSelectedCount').textContent = Object.keys(quickSelectedProducts).length;
+}
+
+function confirmQuickAdd() {
+    var products = Object.values(quickSelectedProducts);
+    if (!products.length) { closeQuickAdd(); return; }
+
+    // Remove empty first row if it exists
+    var firstRow = document.querySelector('.item-row');
+    if (firstRow) {
+        var firstTitle = firstRow.querySelector('input[name="item_title[]"]').value.trim();
+        var firstPrice = parseFloat(firstRow.querySelector('.item-price').value) || 0;
+        if (!firstTitle && firstPrice === 0) {
+            firstRow.remove();
+        }
+    }
+
+    products.forEach(function(p) {
+        var html = '<tr class="item-row" data-product-id="' + p.id + '" data-stock-qty="' + p.stock_quantity + '" data-available="' + p.available + '" data-is-service="' + (p.is_service ? '1' : '0') + '">' +
+            '<td><div class="product-search-wrap">' +
+            '<input type="hidden" name="item_product_id[]" value="' + p.id + '">' +
+            '<input type="text" name="item_title[]" class="form-control product-search-input" value="' + escapeHtml(p.name) + '" required autocomplete="off" onfocus="onProductFocus(this)" oninput="onProductInput(this)">' +
+            '<div class="product-dropdown"></div></div>' +
+            (p.sku ? '<span class="sku-badge" style="margin-top:4px;display:inline-block">' + escapeHtml(p.sku) + '</span>' : '') +
+            '<div class="stock-info-row">' + buildStockHtml(p) + '</div></td>' +
+            '<td><input type="text" name="item_unit[]" class="form-control item-unit" value="' + escapeHtml(p.unit) + '" placeholder="ĐVT"></td>' +
+            '<td><input type="number" name="item_price[]" class="form-control item-price" step="0.01" value="' + p.sell_price + '" oninput="calcRow(this)"></td>' +
+            '<td><input type="number" name="item_qty[]" class="form-control item-qty" step="0.01" value="1" oninput="calcRow(this)"></td>' +
+            '<td><input type="number" name="item_discount[]" class="form-control item-disc" step="0.1" value="0" oninput="calcRow(this)"></td>' +
+            '<td class="item-total-cell">' + fmt(p.sell_price) + '</td>' +
+            '<td class="col-act"><button type="button" class="remove-item-btn" onclick="removeRow(this)" title="Xóa"><i class="fas fa-trash-alt"></i></button></td>' +
+            '</tr>';
+        document.getElementById('itemsBody').insertAdjacentHTML('beforeend', html);
+    });
+
+    calcTotals();
+    closeQuickAdd();
+}
+
+function buildStockHtml(p) {
+    if (p.is_service) return '<span class="stock-chip service"><i class="fas fa-concierge-bell"></i> Dịch vụ</span>';
+    var cls = p.stock_status === 'in' ? 'in' : (p.stock_status === 'low' ? 'low' : 'out');
+    var h = '<span class="stock-chip ' + cls + '"><i class="fas fa-cubes"></i> Tồn: ' + p.stock_quantity + ' ' + p.unit + '</span>';
+    if (p.planned_import > 0) h += '<span class="stock-chip planned"><i class="fas fa-arrow-down"></i> Nhập DK: +' + p.planned_import + '</span>';
+    if (p.planned_export > 0) h += '<span class="stock-chip planned"><i class="fas fa-arrow-up"></i> Xuất DK: -' + p.planned_export + '</span>';
+    h += '<span class="stock-chip" style="background:#f0f0f0;color:#595959"><i class="fas fa-calculator"></i> Khả dụng: ' + p.available + '</span>';
+    return h;
+}
+
 // Init calc on page load
 document.addEventListener('DOMContentLoaded', function() {
     calcTotals();
     var taxInput = document.getElementById('taxRate');
     if (taxInput) taxInput.addEventListener('input', calcTotals);
+
+    // Load stock info for existing product items
+    document.querySelectorAll('.item-row[data-product-id]').forEach(function(row) {
+        var pid = row.dataset.productId;
+        if (pid) {
+            fetch('/quotes/api/products/search?q=')
+                .then(r => r.json())
+                .then(function(products) {
+                    var p = products.find(x => x.id == pid);
+                    if (p) {
+                        var stockRow = row.querySelector('.stock-info-row');
+                        if (stockRow) stockRow.innerHTML = buildStockHtml(p);
+                        row.dataset.stockQty = p.stock_quantity;
+                        row.dataset.available = p.available;
+                        row.dataset.isService = p.is_service ? '1' : '0';
+                        checkStockWarning(row);
+                    }
+                });
+        }
+    });
+});
+
+// Close modal on background click
+document.getElementById('quickAddModal').addEventListener('click', function(e) {
+    if (e.target === this) closeQuickAdd();
 });
 </script>
 {% endblock %}

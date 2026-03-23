@@ -86,12 +86,19 @@ class QuoteItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     quote_id = db.Column(db.Integer, db.ForeignKey('quotes.id'), nullable=False)
 
+    # Liên kết sản phẩm
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'))
+
     title = db.Column(db.String(500), nullable=False)
     description = db.Column(db.Text)
+    unit = db.Column(db.String(50))  # Đơn vị tính (từ Product)
     unit_price = db.Column(db.Float, default=0)
     quantity = db.Column(db.Float, default=1)
     discount = db.Column(db.Float, default=0)  # % giảm giá
     sort_order = db.Column(db.Integer, default=0)
+
+    # Relationship
+    product = db.relationship('Product', foreign_keys=[product_id])
 
     @property
     def discount_amount(self):

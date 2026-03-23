@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from services.quote_service import QuoteService, QUOTE_STATUSES
+from models.product import PRODUCT_UNITS
 
 quotes_bp = Blueprint('quotes', __name__, url_prefix='/quotes')
 service = QuoteService()
@@ -38,6 +39,8 @@ def create():
                            contacts=options['contacts'],
                            companies=options['companies'],
                            deals=options['deals'],
+                           products=options['products'],
+                           product_units=PRODUCT_UNITS,
                            title='Tạo báo giá')
 
 
@@ -69,6 +72,8 @@ def edit(id):
                            contacts=options['contacts'],
                            companies=options['companies'],
                            deals=options['deals'],
+                           products=options['products'],
+                           product_units=PRODUCT_UNITS,
                            title='Sửa báo giá')
 
 
@@ -89,3 +94,12 @@ def update_status(id):
     if quote:
         flash(f'Trạng thái đã chuyển sang: {quote.status_label}', 'success')
     return redirect(url_for('quotes.detail', id=id))
+
+
+@quotes_bp.route('/api/products/search')
+@login_required
+def search_products():
+    """AJAX: search products with stock info for quote form."""
+    keyword = request.args.get('q', '').strip()
+    results = service.search_products(current_user.tenant_id, keyword)
+    return jsonify(results)
