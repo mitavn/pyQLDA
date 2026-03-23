@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from services.company_service import CompanyService
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
+from services.base_data_provider import ValidationError
 
 companies_bp = Blueprint('companies', __name__, url_prefix='/companies')
 service = CompanyService()
@@ -33,9 +34,12 @@ def create():
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        company = service.create(tenant_id, data, current_user.id)
-        flash('Đã tạo công ty mới thành công!', 'success')
-        return redirect(url_for('companies.detail', id=company.id))
+        try:
+            company = service.create(tenant_id, data, current_user.id)
+            flash('Đã tạo công ty mới thành công!', 'success')
+            return redirect(url_for('companies.detail', id=company.id))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('companies/form.html', company=None,
                            field_configs=field_configs, title='Tạo công ty mới')
@@ -65,9 +69,12 @@ def edit(id):
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        service.update(tenant_id, id, data)
-        flash('Đã cập nhật công ty thành công!', 'success')
-        return redirect(url_for('companies.detail', id=id))
+        try:
+            service.update(tenant_id, id, data)
+            flash('Đã cập nhật công ty thành công!', 'success')
+            return redirect(url_for('companies.detail', id=id))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('companies/form.html', company=company,
                            field_configs=field_configs, title='Chỉnh sửa công ty')

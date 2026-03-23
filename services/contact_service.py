@@ -12,6 +12,20 @@ class ContactService(BaseDataProvider):
     model = Contact
     module_name = 'contact'
 
+    def validate(self, data, tenant_id, record_id=None):
+        """Validate: SĐT và Email không trùng."""
+        phone = (data.get('phone') or '').strip()
+        if phone:
+            self._check_unique(tenant_id, 'phone', phone, record_id, 'Số điện thoại')
+
+        email = (data.get('email') or '').strip()
+        if email:
+            self._check_unique(tenant_id, 'email', email, record_id, 'Email')
+
+        customer_code = (data.get('customer_code') or '').strip()
+        if customer_code:
+            self._check_unique(tenant_id, 'customer_code', customer_code, record_id, 'Mã khách hàng')
+
     def build_search_filter(self, query, search):
         return query.filter(
             db.or_(

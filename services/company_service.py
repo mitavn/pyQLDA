@@ -12,6 +12,16 @@ class CompanyService(BaseDataProvider):
     model = Company
     module_name = 'company'
 
+    def validate(self, data, tenant_id, record_id=None):
+        """Validate: MST không trùng."""
+        tax_code = (data.get('tax_code') or '').strip()
+        if tax_code:
+            self._check_unique(tenant_id, 'tax_code', tax_code, record_id, 'Mã số thuế')
+
+        email = (data.get('email') or '').strip()
+        if email:
+            self._check_unique(tenant_id, 'email', email, record_id, 'Email công ty')
+
     def build_search_filter(self, query, search):
         return query.filter(
             db.or_(

@@ -16,6 +16,12 @@ class DealService(BaseDataProvider):
     model = Deal
     module_name = 'deal'
 
+    def validate(self, data, tenant_id, record_id=None):
+        """Validate: Số hợp đồng không trùng."""
+        contract_number = (data.get('contract_number') or '').strip()
+        if contract_number:
+            self._check_unique(tenant_id, 'contract_number', contract_number, record_id, 'Số hợp đồng')
+
     def build_search_filter(self, query, search):
         return query.filter(Deal.name.ilike(f'%{search}%'))
 

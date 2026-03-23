@@ -7,6 +7,14 @@ Each resource service extends this class with module-specific logic.
 from models.user import db
 
 
+class ValidationError(Exception):
+    """Raised when data validation fails."""
+    def __init__(self, message, field=None):
+        self.message = message
+        self.field = field
+        super().__init__(self.message)
+
+
 class BaseDataProvider:
     """Generic data provider for CRM resources (Salesforce/Refine pattern).
 
@@ -76,8 +84,10 @@ class BaseDataProvider:
         """Create a new record from a dict of field values.
 
         Returns the created record.
+        Raises ValidationError if validation fails.
         """
         data = self.before_create(data, tenant_id, user_id)
+        self.validate(data, tenant_id, record_id=None)
 
         record = self.model(
             tenant_id=tenant_id,
@@ -97,9 +107,11 @@ class BaseDataProvider:
         """Update an existing record.
 
         Returns the updated record.
+        Raises ValidationError if validation fails.
         """
         record = self.get_one(tenant_id, record_id)
         data = self.before_update(record, data, tenant_id)
+        self.validate(data, tenant_id, record_id=record_id)
         self._apply_data(record, data)
         db.session.commit()
         self.after_update(record, data, tenant_id)
@@ -129,6 +141,47 @@ class BaseDataProvider:
     def default_order(self):
         """Default ORDER BY clause. Override to customize."""
         return [self.model.created_at.desc()]
+
+    # ── Validation (override in subclasses) ──────────────────────
+    def validate(self, data, tenant_id, record_id=None):
+        """Validate data before create/update.
+
+        Override in subclass to add uniqueness or business rules.
+        Raise ValidationError on failure.
+
+        Args:
+            data: dict of field values
+            tenant_id: current tenant
+            record_id: None for create, int for update (exclude self)
+        """
+        pass
+
+    def _check_unique(self, tenant_id, field_name, value, record_id=None, label=None):
+        """Helper: check if a field value is unique within tenant.
+
+        Args:
+            field_name: model field name
+            value: value to check
+            record_id: exclude this record (for updates)
+            label: human-readable field label for error message
+        """
+        if not value:
+            return  # Skip empty values
+
+        query = self.model.query.filter_by(
+            tenant_id=tenant_id,
+            **{field_name: value}
+        )
+        if record_id:
+            query = query.filter(self.model.id != record_id)
+
+        existing = query.first()
+        if existing:
+            display_label = label or field_name
+            raise ValidationError(
+                f'{display_label} "{value}" đã tồn tại trong hệ thống.',
+                field=field_name
+            )
 
     # ── Lifecycle hooks (override in subclasses) ────────────────
     def before_create(self, data, tenant_id, user_id):

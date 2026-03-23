@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from services.deal_service import DealService, DEAL_STAGES
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
+from services.base_data_provider import ValidationError
 
 deals_bp = Blueprint('deals', __name__, url_prefix='/deals')
 service = DealService()
@@ -45,9 +46,12 @@ def create():
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        deal = service.create(tenant_id, data, current_user.id)
-        flash('Đã tạo deal mới thành công!', 'success')
-        return redirect(url_for('deals.detail', id=deal.id))
+        try:
+            deal = service.create(tenant_id, data, current_user.id)
+            flash('Đã tạo deal mới thành công!', 'success')
+            return redirect(url_for('deals.detail', id=deal.id))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('deals/form.html', deal=None,
                            contacts=options['contacts'],
@@ -83,9 +87,12 @@ def edit(id):
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        service.update(tenant_id, id, data)
-        flash('Đã cập nhật deal thành công!', 'success')
-        return redirect(url_for('deals.detail', id=id))
+        try:
+            service.update(tenant_id, id, data)
+            flash('Đã cập nhật deal thành công!', 'success')
+            return redirect(url_for('deals.detail', id=id))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('deals/form.html', deal=deal,
                            contacts=options['contacts'],

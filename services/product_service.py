@@ -5,13 +5,23 @@ from models.product import (Product, StockTransaction, StockOrder, StockOrderIte
                              InventoryCount, InventoryCountItem,
                              PRODUCT_CATEGORIES, PRODUCT_UNITS, TRANSACTION_TYPES,
                              ORDER_TYPES, ORDER_STATUSES, COUNT_STATUSES)
-from services.base_data_provider import BaseDataProvider
+from services.base_data_provider import BaseDataProvider, ValidationError
 
 
 class ProductService(BaseDataProvider):
 
     model = Product
     module_name = 'product'
+
+    def validate_product(self, tenant_id, data, record_id=None):
+        """Validate: SKU không trùng."""
+        sku = (data.get('sku') or '').strip()
+        if sku:
+            self._check_unique(tenant_id, 'sku', sku, record_id, 'Mã SKU')
+
+        barcode = (data.get('barcode') or '').strip()
+        if barcode:
+            self._check_unique(tenant_id, 'barcode', barcode, record_id, 'Barcode')
 
     def build_search_filter(self, query, search):
         return query.filter(db.or_(
@@ -59,6 +69,7 @@ class ProductService(BaseDataProvider):
     # ── Create product ──────────────────────────────────────────
     def create_product(self, tenant_id, form, user_id):
         """Create product from form data, with initial stock transaction."""
+        self.validate_product(tenant_id, form)
         product = Product(
             tenant_id=tenant_id, created_by=user_id, owner_id=user_id,
             name=form.get('name', '').strip(),
@@ -96,6 +107,7 @@ class ProductService(BaseDataProvider):
     # ── Update product ──────────────────────────────────────────
     def update_product(self, tenant_id, product_id, form):
         """Update product from form data."""
+        self.validate_product(tenant_id, form, record_id=product_id)
         product = self.get_one(tenant_id, product_id)
         product.name = form.get('name', '').strip()
         product.sku = form.get('sku', '').strip()

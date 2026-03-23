@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from services.contact_service import ContactService
 from services.field_service import get_visible_fields
 from services.form_parser import parse_form_data
+from services.base_data_provider import ValidationError
 
 contacts_bp = Blueprint('contacts', __name__, url_prefix='/contacts')
 service = ContactService()
@@ -41,9 +42,12 @@ def create():
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        contact = service.create(tenant_id, data, current_user.id)
-        flash('Đã tạo liên hệ mới thành công!', 'success')
-        return redirect(url_for('contacts.detail', id=contact.id))
+        try:
+            contact = service.create(tenant_id, data, current_user.id)
+            flash('Đã tạo liên hệ mới thành công!', 'success')
+            return redirect(url_for('contacts.detail', id=contact.id))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('contacts/form.html',
                            contact=None,
@@ -78,9 +82,12 @@ def edit(id):
 
     if request.method == 'POST':
         data = parse_form_data(request.form, field_configs)
-        service.update(tenant_id, id, data)
-        flash('Đã cập nhật liên hệ thành công!', 'success')
-        return redirect(url_for('contacts.detail', id=id))
+        try:
+            service.update(tenant_id, id, data)
+            flash('Đã cập nhật liên hệ thành công!', 'success')
+            return redirect(url_for('contacts.detail', id=id))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('contacts/form.html',
                            contact=contact,

@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from models.product import (PRODUCT_CATEGORIES, PRODUCT_UNITS, TRANSACTION_TYPES,
                              ORDER_TYPES, ORDER_STATUSES, COUNT_STATUSES)
 from services.product_service import ProductService
+from services.base_data_provider import ValidationError
 from datetime import datetime
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
@@ -47,9 +48,12 @@ def list_products():
 @login_required
 def create():
     if request.method == 'POST':
-        product = service.create_product(current_user.tenant_id, request.form, current_user.id)
-        flash('Đã thêm sản phẩm mới!', 'success')
-        return redirect(url_for('products.list_products'))
+        try:
+            product = service.create_product(current_user.tenant_id, request.form, current_user.id)
+            flash('Đã thêm sản phẩm mới!', 'success')
+            return redirect(url_for('products.list_products'))
+        except ValidationError as e:
+            flash(e.message, 'error')
 
     return render_template('products/form.html', product=None,
                            categories=PRODUCT_CATEGORIES, units=PRODUCT_UNITS,
@@ -61,13 +65,18 @@ def create():
 def edit(id):
     product = service.get_one(current_user.tenant_id, id)
     if request.method == 'POST':
-        service.update_product(current_user.tenant_id, id, request.form)
+        try:
+            service.update_product(current_user.tenant_id, id, request.form)
 
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'status': 'ok', 'message': 'Đã lưu'})
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'status': 'ok', 'message': 'Đã lưu'})
 
-        flash('Đã cập nhật sản phẩm!', 'success')
-        return redirect(url_for('products.list_products'))
+            flash('Đã cập nhật sản phẩm!', 'success')
+            return redirect(url_for('products.list_products'))
+        except ValidationError as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'status': 'error', 'message': e.message}), 400
+            flash(e.message, 'error')
 
     return render_template('products/form.html', product=product,
                            categories=PRODUCT_CATEGORIES, units=PRODUCT_UNITS,
